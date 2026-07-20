@@ -5,12 +5,10 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 from sqlalchemy import Column, DateTime
 
-# URL de connexion à PostgreSQL
-# Par défaut se connecte au conteneur Docker local "localhost" mappé sur le port 5432
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    "postgresql://pricesneak_user:pricesneak_password@localhost:5432/pricesneak_db"
-)
+from backend.core.config import settings
+
+# L'URL de connexion est générée dynamiquement via pydantic-settings
+DATABASE_URL = settings.SQLALCHEMY_DATABASE_URI
 
 # Initialisation du moteur et de la session SQLAlchemy
 engine = create_engine(DATABASE_URL)

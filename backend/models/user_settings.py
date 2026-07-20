@@ -19,7 +19,6 @@ class UserSettings(Base, TimestampMixin):
     __tablename__ = "user_settings"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
-    # user_id est unique pour forcer la relation 1-to-1
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False)
     
     currency = Column(SQLEnum(CurrencyEnum), default=CurrencyEnum.USD, nullable=False)
