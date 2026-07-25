@@ -8,19 +8,16 @@ ENV_FILE_PATH = os.path.join(BASE_DIR, ".env")
 class Settings(BaseSettings):
     PROJECT_NAME: str = "PriceSneak API"
     
-    # Base de données
     POSTGRES_SERVER: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
     POSTGRES_PORT: int
 
-    # Sécurité JWT
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080
     
-    # Charge automatiquement le fichier .env en utilisant le chemin absolu
     model_config = SettingsConfigDict(env_file=ENV_FILE_PATH, env_file_encoding="utf-8")
 
     @property

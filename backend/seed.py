@@ -149,7 +149,6 @@ def seed():
         )
         db.add(alert1)
 
-        # Validation finale en base de données
         db.commit()
         print("✅ Base de données initialisée avec succès avec les données de test B2B !")
 

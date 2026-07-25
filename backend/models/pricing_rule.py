@@ -5,7 +5,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from backend.core.database import Base, TimestampMixin
 
-# --- Définition des Enums ---
 class ValueTypeEnum(str, enum.Enum):
     PERCENTAGE = "percentage"
     AMOUNT = "amount"
@@ -31,7 +30,6 @@ class EventTypeEnum(str, enum.Enum):
 class EventScopeEnum(str, enum.Enum):
     COMPETITOR = "competitor"
     MARKET_AVERAGE = "market_average"
-# -----------------------------
 
 class PricingRule(Base, TimestampMixin):
     __tablename__ = "pricing_rules"
@@ -42,7 +40,6 @@ class PricingRule(Base, TimestampMixin):
     auto_update_price = Column(Boolean, default=False, nullable=False)
     value = Column(Numeric(10, 2), nullable=True)
     
-    # Remplacement par des types Enum natifs de SQLAlchemy
     value_type = Column(SQLEnum(ValueTypeEnum), nullable=True)
     comparison_operator = Column(SQLEnum(ComparisonOperatorEnum), nullable=True)
     position = Column(SQLEnum(PositionEnum), nullable=False)

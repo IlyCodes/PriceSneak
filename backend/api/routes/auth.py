@@ -7,8 +7,11 @@ from backend.api import deps
 from backend.core.security import verify_password, get_password_hash, create_access_token
 from backend.models.user import User
 from backend.models.user_settings import UserSettings, CurrencyEnum, LanguageEnum
-from backend.schemas.user import UserCreate, UserResponse, Token
-
+from backend.schemas.user import (
+    UserCreate, UserResponse, Token,
+    UserUpdate, UserPasswordUpdate,
+    UserSettingsResponse, UserSettingsUpdate
+)
 router = APIRouter()
 
 @router.post("/register", response_model=UserResponse)
@@ -28,7 +31,6 @@ def register(
             detail="Un utilisateur avec cet email existe déjà.",
         )
     
-    # Création de l'utilisateur avec hash Bcrypt
     user = User(
         email=user_in.email,
         name=user_in.name,
@@ -38,7 +40,7 @@ def register(
     db.add(user)
     db.flush() # Récupérer l'ID sans commit final
     
-    # Création des UserSettings en 1-to-1 (par défaut USD et Anglais)
+    # Initialize required user preferences
     settings = UserSettings(
         user_id=user.id,
         currency=CurrencyEnum.USD,
@@ -67,7 +69,6 @@ def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Génération du JWT
     return {
         "access_token": create_access_token(subject=user.id),
         "token_type": "bearer",
@@ -81,3 +82,89 @@ def read_current_user(
     Permet à un utilisateur de récupérer ses informations grâce à son token JWT (passé dans l'en-tête).
     """
     return current_user
+
+@router.put("/me", response_model=UserResponse)
+def update_current_user(
+    *,
+    db: Session = Depends(deps.get_db),
+    user_in: UserUpdate,
+    current_user: User = Depends(deps.get_current_user)
+) -> Any:
+    """
+    Met à jour les informations du profil utilisateur courant (nom, email).
+    """
+    if user_in.email and user_in.email != current_user.email:
+        existing_user = db.query(User).filter(User.email == user_in.email).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=400,
+                detail="Un utilisateur avec cet email existe déjà."
+            )
+        current_user.email = user_in.email
+    
+    if user_in.name:
+        current_user.name = user_in.name
+        
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+@router.put("/me/password", response_model=dict)
+def update_password(
+    *,
+    db: Session = Depends(deps.get_db),
+    password_in: UserPasswordUpdate,
+    current_user: User = Depends(deps.get_current_user)
+) -> Any:
+    """
+    Modifie le mot de passe de l'utilisateur courant.
+    """
+    if not verify_password(password_in.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=400,
+            detail="Le mot de passe actuel est incorrect."
+        )
+    
+    current_user.password_hash = get_password_hash(password_in.new_password)
+    db.commit()
+    return {"message": "Mot de passe mis à jour avec succès."}
+
+@router.get("/me/settings", response_model=UserSettingsResponse)
+def read_current_user_settings(
+    db: Session = Depends(deps.get_db),
+    current_user: User = Depends(deps.get_current_user)
+) -> Any:
+    """
+    Récupère les paramètres de l'utilisateur courant.
+    """
+    settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
+    if not settings:
+        raise HTTPException(status_code=404, detail="Paramètres introuvables.")
+    return settings
+
+@router.put("/me/settings", response_model=UserSettingsResponse)
+def update_current_user_settings(
+    *,
+    db: Session = Depends(deps.get_db),
+    settings_in: UserSettingsUpdate,
+    current_user: User = Depends(deps.get_current_user)
+) -> Any:
+    """
+    Met à jour les paramètres de l'utilisateur courant.
+    """
+    settings = db.query(UserSettings).filter(UserSettings.user_id == current_user.id).first()
+    if not settings:
+        raise HTTPException(status_code=404, detail="Paramètres introuvables.")
+    
+    if settings_in.currency is not None:
+        settings.currency = settings_in.currency
+    if settings_in.language is not None:
+        settings.language = settings_in.language
+    if settings_in.dashboard_notification is not None:
+        settings.dashboard_notification = settings_in.dashboard_notification
+    if settings_in.email_notification is not None:
+        settings.email_notification = settings_in.email_notification
+        
+    db.commit()
+    db.refresh(settings)
+    return settings

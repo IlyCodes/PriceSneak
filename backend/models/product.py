@@ -18,7 +18,6 @@ class Product(Base, TimestampMixin):
     cost_price = Column(Numeric(10, 2), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
 
-    # Relations ORM
     user = relationship("User", back_populates="products")
     pricing_rule = relationship("PricingRule", back_populates="products")
     competitor_products = relationship("CompetitorProduct", back_populates="product", cascade="all, delete-orphan")

@@ -8,7 +8,6 @@ from backend.core.database import SessionLocal
 from backend.core.config import settings
 from backend.models.user import User
 
-# Extrait le token JWT du header HTTP "Authorization: Bearer <token>"
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
 def get_db() -> Generator:

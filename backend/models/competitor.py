@@ -11,5 +11,4 @@ class Competitor(Base, TimestampMixin):
     name = Column(String(100), nullable=False)
     domain_url = Column(String(255), unique=True, nullable=False)
 
-    # Relations ORM
     competitor_products = relationship("CompetitorProduct", back_populates="competitor", cascade="all, delete-orphan")

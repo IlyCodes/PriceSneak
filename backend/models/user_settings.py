@@ -26,5 +26,4 @@ class UserSettings(Base, TimestampMixin):
     email_notification = Column(Boolean, default=True, nullable=False)
     language = Column(SQLEnum(LanguageEnum), default=LanguageEnum.ENG, nullable=False)
 
-    # Relation inverse vers l'utilisateur
     user = relationship("User", back_populates="settings")

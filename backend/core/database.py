@@ -10,11 +10,9 @@ from backend.core.config import settings
 # L'URL de connexion est générée dynamiquement via pydantic-settings
 DATABASE_URL = settings.SQLALCHEMY_DATABASE_URI
 
-# Initialisation du moteur et de la session SQLAlchemy
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Classe declarative de base pour l'ORM
 Base = declarative_base()
 
 # Mixin réutilisable pour injecter created_at et updated_at automatiquement dans toutes les tables

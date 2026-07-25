@@ -13,5 +13,4 @@ class ProductAnalysis(Base, TimestampMixin):
     avg_price = Column(Numeric(10, 2), nullable=True)
     highest_price = Column(Numeric(10, 2), nullable=True)
 
-    # Relation 1-to-1 vers Product
     product = relationship("Product", back_populates="analysis")

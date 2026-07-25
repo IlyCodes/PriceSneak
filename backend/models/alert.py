@@ -13,6 +13,5 @@ class Alert(Base, TimestampMixin):
     message = Column(String(500), nullable=False)
     is_read = Column(Boolean, default=False, nullable=False)
 
-    # Relations ORM
     user = relationship("User", back_populates="alerts")
     competitor_product = relationship("CompetitorProduct", back_populates="alerts")

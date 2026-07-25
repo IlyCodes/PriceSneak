@@ -18,7 +18,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Enregistrement des routes d'authentification
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 
 @app.get("/")

@@ -50,7 +50,6 @@ def test_login_wrong_password(client):
     assert response.status_code == 401
 
 def test_get_current_user(client):
-    # 1. Création et Connexion
     client.post(
         "/api/auth/register",
         json={"email": "me@pricesneak.com", "name": "Me", "password": "password123"}
@@ -61,7 +60,6 @@ def test_get_current_user(client):
     )
     token = login_response.json()["access_token"]
     
-    # 2. Requête protégée avec le JWT dans l'en-tête (Header)
     response = client.get(
         "/api/auth/me",
         headers={"Authorization": f"Bearer {token}"}
@@ -74,5 +72,4 @@ def test_invalid_validation_password_too_short(client):
         "/api/auth/register",
         json={"email": "short@pricesneak.com", "name": "Short", "password": "123"} # < 6 caractères
     )
-    # Code 422 : Unprocessable Entity (Erreur de validation Pydantic)
     assert response.status_code == 422

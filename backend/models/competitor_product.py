@@ -15,7 +15,6 @@ class CompetitorProduct(Base, TimestampMixin):
     is_in_stock = Column(Boolean, default=True, nullable=False)
     last_scraped_at = Column(DateTime, nullable=True)
 
-    # Relations ORM
     product = relationship("Product", back_populates="competitor_products")
     competitor = relationship("Competitor", back_populates="competitor_products")
     alerts = relationship("Alert", back_populates="competitor_product", cascade="all, delete-orphan")
