@@ -14,20 +14,17 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
   const { data, headers: customHeaders, ...customConfig } = options;
   const token = localStorage.getItem('token');
 
-  // Headers par défaut
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(customHeaders as Record<string, string>),
   };
 
-  // Ajout du JWT s'il est présent
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
   let body: BodyInit | undefined = undefined;
 
-  // Gestion du body (Data)
   if (data) {
     if (data instanceof URLSearchParams) {
       body = data;
@@ -37,7 +34,6 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
     }
   }
 
-  // Configuration finale de la requête
   const config: RequestInit = {
     method: data ? 'POST' : 'GET',
     ...customConfig,
@@ -45,10 +41,8 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
     body,
   };
 
-  // Exécution de la requête native
   const response = await fetch(`${BASE_URL}${endpoint}`, config);
 
-  // Gestion des erreurs
   if (!response.ok) {
     let errorMessage = 'Une erreur réseau est survenue.';
     try {
