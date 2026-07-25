@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { apiFetch } from '../../../lib/apiClient';
+import { apiFetch } from '../../../api/apiClient';
+import i18n from '../../../lib/i18n';
 
 export interface User {
   id: string;
@@ -13,6 +14,7 @@ interface AuthContextType {
   token: string | null;
   login: (token: string, userData: User) => void;
   logout: () => void;
+  updateUser: (userData: User) => void;
   isLoading: boolean;
 }
 
@@ -30,8 +32,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
       try {
-        const userData = await apiFetch<User>('/api/auth/me');
+        const [userData, settingsData] = await Promise.all([
+          apiFetch<User>('/api/auth/me'),
+          apiFetch<any>('/api/auth/me/settings').catch(() => null)
+        ]);
         setUser(userData);
+        if (settingsData && settingsData.language) {
+          i18n.changeLanguage(settingsData.language.toLowerCase());
+        }
       } catch (error) {
         console.error("Token invalide ou session expirée", error);
         logout();
@@ -55,8 +63,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(null);
   };
 
+  const updateUser = (userData: User) => {
+    setUser(userData);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,0 +1,70 @@
+{
+  "profile": {
+    "title": "Account Settings",
+    "description": "Manage your personal information, preferences, and account security.",
+    "menu": {
+      "personal_info": "Personal Information",
+      "preferences": "Preferences",
+      "security": "Security"
+    }
+  },
+  "preferences": {
+    "title": "Preferences & Notifications",
+    "region_language": "Region and Language",
+    "currency_label": "Default Currency",
+    "language_label": "Interface Language",
+    "notifications": "Notifications",
+    "dashboard_alerts": "Dashboard Alerts",
+    "dashboard_alerts_desc": "Receive in-app pop-ups",
+    "email_alerts": "Email Alerts",
+    "email_alerts_desc": "Receive an email summary",
+    "save_btn": "Save Preferences",
+    "success": "Preferences updated successfully.",
+    "error_load": "Unable to load preferences.",
+    "error_save": "Error during update."
+  },
+  "personal_info": {
+    "title": "Personal Information",
+    "name_label": "Full Name",
+    "name_placeholder": "Your name",
+    "email_label": "Email Address",
+    "email_placeholder": "you@example.com",
+    "save_btn": "Save",
+    "success": "Profile updated successfully.",
+    "error_save": "Error during update."
+  },
+  "security": {
+    "title": "Security & Password",
+    "current_password_label": "Current Password",
+    "new_password_label": "New Password",
+    "confirm_password_label": "Confirm New Password",
+    "save_btn": "Update",
+    "success": "Password updated successfully.",
+    "error_mismatch": "The new passwords do not match.",
+    "error_length": "The new password must contain at least 6 characters.",
+    "error_save": "Error updating password."
+  },
+  "auth": {
+    "login_welcome": "Welcome",
+    "login_subtitle": "Sign in to PriceSneak",
+    "email_label": "Work Email",
+    "password_label": "Password",
+    "login_btn": "Sign in",
+    "no_account": "Don't have an account?",
+    "create_account_link": "Create an account",
+    "login_error": "Incorrect email or password",
+    "register_title": "Registration",
+    "register_subtitle": "Get started with PriceSneak",
+    "name_label": "Full Name",
+    "register_btn": "Create my account",
+    "has_account": "Already have an account?",
+    "login_link": "Sign in",
+    "register_error": "Error creating account"
+  },
+  "dashboard": {
+    "title": "Dashboard (Protected)",
+    "subtitle": "If you see this page, your JWT is valid.",
+    "profile_btn": "My Profile",
+    "logout_btn": "Log out"
+  }
+}

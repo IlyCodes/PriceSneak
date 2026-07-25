@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { apiFetch } from '../../../lib/apiClient';
+import { apiFetch } from '../../../api/apiClient';
+import { useTranslation } from 'react-i18next';
 
 export const Login = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, token } = useAuth();
   
@@ -41,7 +43,7 @@ export const Login = () => {
       navigate('/dashboard');
       
     } catch (err: any) {
-      setError(err.message || 'Email ou mot de passe incorrect');
+      setError(err.message || t('auth.login_error'));
     } finally {
       setLoading(false);
     }
@@ -54,8 +56,8 @@ export const Login = () => {
           <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <LogIn className="w-8 h-8 text-blue-600" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Bienvenue</h2>
-          <p className="text-gray-500 mt-2 text-sm">Connectez-vous à PriceSneak</p>
+          <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{t('auth.login_welcome')}</h2>
+          <p className="text-gray-500 mt-2 text-sm">{t('auth.login_subtitle')}</p>
         </div>
 
         {error && (
@@ -67,7 +69,7 @@ export const Login = () => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Email professionnel</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('auth.email_label')}</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Mail className="h-5 w-5 text-gray-400" />
@@ -84,7 +86,7 @@ export const Login = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Mot de passe</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('auth.password_label')}</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-gray-400" />
@@ -108,15 +110,15 @@ export const Login = () => {
             {loading ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              'Se connecter'
+              t('auth.login_btn')
             )}
           </button>
         </form>
 
         <p className="mt-8 text-center text-sm text-gray-500">
-          Pas encore de compte ?{' '}
+          {t('auth.no_account')}{' '}
           <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-            Créer un compte
+            {t('auth.create_account_link')}
           </Link>
         </p>
       </div>

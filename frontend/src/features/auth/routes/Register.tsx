@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { UserPlus, Mail, Lock, User, AlertCircle } from 'lucide-react';
-import { apiFetch } from '../../../lib/apiClient';
+import { apiFetch } from '../../../api/apiClient';
 import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 export const Register = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { token } = useAuth();
   
@@ -31,7 +33,7 @@ export const Register = () => {
       navigate('/login');
       
     } catch (err: any) {
-      setError(err.message || 'Erreur lors de la création du compte');
+      setError(err.message || t('auth.register_error'));
     } finally {
       setLoading(false);
     }
@@ -44,8 +46,8 @@ export const Register = () => {
           <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <UserPlus className="w-8 h-8 text-blue-600" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Inscription</h2>
-          <p className="text-gray-500 mt-2 text-sm">Démarrez avec PriceSneak</p>
+          <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{t('auth.register_title')}</h2>
+          <p className="text-gray-500 mt-2 text-sm">{t('auth.register_subtitle')}</p>
         </div>
 
         {error && (
@@ -57,7 +59,7 @@ export const Register = () => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom complet</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('auth.name_label')}</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <User className="h-5 w-5 text-gray-400" />
@@ -75,7 +77,7 @@ export const Register = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Email professionnel</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('auth.email_label')}</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Mail className="h-5 w-5 text-gray-400" />
@@ -92,7 +94,7 @@ export const Register = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Mot de passe</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('auth.password_label')}</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-gray-400" />
@@ -117,15 +119,15 @@ export const Register = () => {
             {loading ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : (
-              'Créer mon compte'
+              t('auth.register_btn')
             )}
           </button>
         </form>
 
         <p className="mt-8 text-center text-sm text-gray-500">
-          Vous avez déjà un compte ?{' '}
+          {t('auth.has_account')}{' '}
           <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-            Se connecter
+            {t('auth.login_link')}
           </Link>
         </p>
       </div>

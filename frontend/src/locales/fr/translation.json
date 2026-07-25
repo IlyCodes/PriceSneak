@@ -1,0 +1,70 @@
+{
+  "profile": {
+    "title": "Paramètres du compte",
+    "description": "Gérez vos informations personnelles, vos préférences et la sécurité de votre compte.",
+    "menu": {
+      "personal_info": "Informations Personnelles",
+      "preferences": "Préférences",
+      "security": "Sécurité"
+    }
+  },
+  "preferences": {
+    "title": "Préférences & Notifications",
+    "region_language": "Région et Langue",
+    "currency_label": "Devise par défaut",
+    "language_label": "Langue de l'interface",
+    "notifications": "Notifications",
+    "dashboard_alerts": "Alertes Dashboard",
+    "dashboard_alerts_desc": "Recevoir des pop-ups dans l'application",
+    "email_alerts": "Alertes Email",
+    "email_alerts_desc": "Recevoir un résumé par email",
+    "save_btn": "Enregistrer les préférences",
+    "success": "Préférences mises à jour avec succès.",
+    "error_load": "Impossible de charger les préférences.",
+    "error_save": "Erreur lors de la mise à jour."
+  },
+  "personal_info": {
+    "title": "Informations Personnelles",
+    "name_label": "Nom complet",
+    "name_placeholder": "Votre nom",
+    "email_label": "Adresse Email",
+    "email_placeholder": "vous@exemple.com",
+    "save_btn": "Enregistrer",
+    "success": "Profil mis à jour avec succès.",
+    "error_save": "Erreur lors de la mise à jour."
+  },
+  "security": {
+    "title": "Sécurité & Mot de passe",
+    "current_password_label": "Mot de passe actuel",
+    "new_password_label": "Nouveau mot de passe",
+    "confirm_password_label": "Confirmer le nouveau mot de passe",
+    "save_btn": "Mettre à jour",
+    "success": "Mot de passe mis à jour avec succès.",
+    "error_mismatch": "Les nouveaux mots de passe ne correspondent pas.",
+    "error_length": "Le nouveau mot de passe doit contenir au moins 6 caractères.",
+    "error_save": "Erreur lors de la mise à jour du mot de passe."
+  },
+  "auth": {
+    "login_welcome": "Bienvenue",
+    "login_subtitle": "Connectez-vous à PriceSneak",
+    "email_label": "Email professionnel",
+    "password_label": "Mot de passe",
+    "login_btn": "Se connecter",
+    "no_account": "Pas encore de compte ?",
+    "create_account_link": "Créer un compte",
+    "login_error": "Email ou mot de passe incorrect",
+    "register_title": "Inscription",
+    "register_subtitle": "Démarrez avec PriceSneak",
+    "name_label": "Nom complet",
+    "register_btn": "Créer mon compte",
+    "has_account": "Vous avez déjà un compte ?",
+    "login_link": "Se connecter",
+    "register_error": "Erreur lors de la création du compte"
+  },
+  "dashboard": {
+    "title": "Dashboard (Protégé)",
+    "subtitle": "Si vous voyez cette page, c'est que votre JWT est valide.",
+    "profile_btn": "Mon Profil",
+    "logout_btn": "Déconnexion"
+  }
+}
