@@ -1,12 +1,8 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { Card } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 
 export const Dashboard = () => {
-  const { t } = useTranslation();
-
   return (
     <DashboardLayout>
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
@@ -14,7 +10,7 @@ export const Dashboard = () => {
           <h1 className="text-3xl font-bold text-brand-text-main tracking-tight">Dashboard</h1>
           <p className="text-brand-text-muted mt-1">High-level overview of the price tracking engine.</p>
         </div>
-        <Button className="shrink-0 gap-2">
+        <Button className="w-full md:w-auto justify-center shrink-0 gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
           Add Product
         </Button>
