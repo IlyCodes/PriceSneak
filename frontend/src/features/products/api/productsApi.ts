@@ -10,6 +10,11 @@ export interface Product {
   cost_price: number;
   is_active: boolean;
   created_at: string;
+  analysis?: {
+    cheapest_price: number | null;
+    avg_price: number | null;
+    highest_price: number | null;
+  };
 }
 
 export interface PaginatedProducts {
@@ -54,6 +59,14 @@ export const updateProduct = async (id: string, data: Partial<ProductCreate>): P
     method: 'PUT',
     data
   });
+};
+
+export const getProductHistory = async (id: string): Promise<{ history: any[] }> => {
+  return apiFetch<{ history: any[] }>(`/api/products/${id}/history`);
+};
+
+export const getProductAnalysis = async (id: string): Promise<{ cheapest_price: number | null, avg_price: number | null, highest_price: number | null }> => {
+  return apiFetch<{ cheapest_price: number | null, avg_price: number | null, highest_price: number | null }>(`/api/products/${id}/analysis`);
 };
 
 export const deleteProduct = async (id: string): Promise<void> => {

@@ -21,6 +21,19 @@ export function SlideOver({ isOpen, onClose, title, children, isDirty = false, e
   const navigate = useNavigate();
   const { t } = useTranslation();
 
+  const handleClose = () => {
+    if (isDirty) {
+      setIsConfirmModalOpen(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const confirmClose = () => {
+    setIsConfirmModalOpen(false);
+    onClose(true);
+  };
+
   // Handle ESC key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -79,18 +92,6 @@ export function SlideOver({ isOpen, onClose, title, children, isDirty = false, e
     };
   }, [isOpen]);
 
-  const handleClose = () => {
-    if (isDirty) {
-      setIsConfirmModalOpen(true);
-    } else {
-      onClose();
-    }
-  };
-
-  const confirmClose = () => {
-    setIsConfirmModalOpen(false);
-    onClose(true);
-  };
 
   const handleExpand = () => {
     if (expandUrl) {

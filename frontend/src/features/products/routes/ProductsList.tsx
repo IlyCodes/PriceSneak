@@ -8,6 +8,7 @@ import { ProductForm } from '../components/ProductForm';
 import { getProducts, getProduct, createProduct, updateProduct, importProducts, exportProducts, type Product, type PaginatedProducts } from '../api/productsApi';
 import { Plus, Edit2, Search, ChevronLeft, ChevronRight, Upload, Download, FileType, FileSpreadsheet } from 'lucide-react';
 import { ImportProductsModal } from '../components/ImportProductsModal';
+import { useAuth } from '../../auth/context/AuthContext';
 
 export const ProductsList = () => {
   const navigate = useNavigate();
@@ -18,7 +19,9 @@ export const ProductsList = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   
-  // Slide-over state
+  const { currencySymbol } = useAuth();
+  
+  // Persist panel state in URL for shareable links
   const action = searchParams.get('action');
   const editId = searchParams.get('id');
   
@@ -65,21 +68,6 @@ export const ProductsList = () => {
     fetchProducts(currentPage, searchParams.get('search') || undefined);
   }, [currentPage, searchParams.get('search')]);
 
-  useEffect(() => {
-    if (action === 'edit' && editId) {
-      setIsFetchingProduct(true);
-      getProduct(editId).then(data => {
-        setSelectedProduct(data);
-        setIsFetchingProduct(false);
-      }).catch(() => {
-        setIsFetchingProduct(false);
-        closeSlideOver();
-      });
-    } else if (action === 'new') {
-      setSelectedProduct(undefined);
-    }
-  }, [action, editId]);
-
   const openNewSlideOver = () => {
     setSearchParams(prev => {
       prev.set('action', 'new');
@@ -98,6 +86,23 @@ export const ProductsList = () => {
     setSelectedProduct(undefined);
   };
 
+  useEffect(() => {
+    if (action === 'edit' && editId) {
+      setIsFetchingProduct(true);
+      getProduct(editId).then(data => {
+        setSelectedProduct(data);
+        setIsFetchingProduct(false);
+      }).catch(() => {
+        setIsFetchingProduct(false);
+        closeSlideOver();
+      });
+    } else if (action === 'new') {
+      setSelectedProduct(undefined);
+    }
+  }, [action, editId]);
+
+
+
   const handlePageChange = (newPage: number) => {
     setSearchParams(prev => {
       prev.set('page', newPage.toString());
@@ -112,7 +117,7 @@ export const ProductsList = () => {
       await createProduct(data);
     }
     closeSlideOver();
-    fetchProducts(currentPage, searchParams.get('search') || undefined); // Refresh list
+    fetchProducts(currentPage, searchParams.get('search') || undefined); // Fetch new data to reflect recent import
   };
 
 
@@ -283,12 +288,18 @@ export const ProductsList = () => {
                     </td>
                     <td className="px-6 py-4">
                       <span className="font-bold text-slate-900">
-                        {product.my_current_price ? `$${product.my_current_price.toFixed(2)}` : '--'}
+                        {product.my_current_price ? `${currencySymbol}${product.my_current_price.toFixed(2)}` : '--'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-slate-500">--</td>
-                    <td className="px-6 py-4 text-slate-500">--</td>
-                    <td className="px-6 py-4 text-slate-500">--</td>
+                    <td className="px-6 py-4 text-red-600 font-medium">
+                      {product.analysis?.highest_price ? `${currencySymbol}${product.analysis.highest_price.toFixed(2)}` : '--'}
+                    </td>
+                    <td className="px-6 py-4 text-brand-primary font-medium">
+                      {product.analysis?.avg_price ? `${currencySymbol}${product.analysis.avg_price.toFixed(2)}` : '--'}
+                    </td>
+                    <td className="px-6 py-4 text-emerald-600 font-medium">
+                      {product.analysis?.cheapest_price ? `${currencySymbol}${product.analysis.cheapest_price.toFixed(2)}` : '--'}
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button 
@@ -330,22 +341,28 @@ export const ProductsList = () => {
                   <div className="text-right shrink-0">
                     <div className="text-xs text-slate-500 mb-0.5">{t('products.table_your_price')}</div>
                     <span className="font-bold text-slate-900 text-lg">
-                      {product.my_current_price ? `$${product.my_current_price.toFixed(2)}` : '--'}
+                      {product.my_current_price ? `${currencySymbol}${product.my_current_price.toFixed(2)}` : '--'}
                     </span>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2 mb-4 pt-3 border-t border-slate-100">
                   <div>
                     <div className="text-[10px] text-slate-500 uppercase tracking-wider">{t('products.table_highest')}</div>
-                    <div className="text-sm text-slate-900 mt-0.5">--</div>
+                    <div className="text-sm text-red-600 font-medium mt-0.5">
+                      {product.analysis?.highest_price ? `${currencySymbol}${product.analysis.highest_price.toFixed(2)}` : '--'}
+                    </div>
                   </div>
                   <div>
                     <div className="text-[10px] text-slate-500 uppercase tracking-wider">{t('products.table_avg')}</div>
-                    <div className="text-sm text-slate-900 mt-0.5">--</div>
+                    <div className="text-sm text-brand-primary font-medium mt-0.5">
+                      {product.analysis?.avg_price ? `${currencySymbol}${product.analysis.avg_price.toFixed(2)}` : '--'}
+                    </div>
                   </div>
                   <div>
                     <div className="text-[10px] text-slate-500 uppercase tracking-wider">{t('products.table_cheapest')}</div>
-                    <div className="text-sm text-slate-900 mt-0.5">--</div>
+                    <div className="text-sm text-emerald-600 font-medium mt-0.5">
+                      {product.analysis?.cheapest_price ? `${currencySymbol}${product.analysis.cheapest_price.toFixed(2)}` : '--'}
+                    </div>
                   </div>
                 </div>
                 <Button 

@@ -1,21 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
-import { getProduct, deleteProduct, updateProduct, type Product } from '../api/productsApi';
-import { Settings, ChevronDown, Download, Edit2, Trash2, ArrowLeft, Plus } from 'lucide-react';
+import { getProduct, deleteProduct, updateProduct, getProductHistory, getProductAnalysis, type Product } from '../api/productsApi';
+import { fetchCompetitors, addCompetitor, updateCompetitor, deleteCompetitor, fetchCompetitorHistory, type CompetitorProduct, type PriceHistoryPoint } from '../api/competitorsApi';
+import { Settings, ChevronDown, Download, Edit2, Trash2, ArrowLeft, Plus, FileSpreadsheet, Search } from 'lucide-react';
+import { read, utils, writeFile } from 'xlsx';
+import { useAuth } from '../../auth/context/AuthContext';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { SlideOver } from '../../../components/ui/SlideOver';
 import { ConfirmModal } from '../../../components/ui/ConfirmModal';
 import { ProductForm } from '../components/ProductForm';
+import { AddCompetitorModal } from '../components/AddCompetitorModal';
+import { ImportCompetitorsModal } from '../components/ImportCompetitorsModal';
 import { Button } from '../../../components/ui/Button';
 import { Switch } from '../../../components/ui/Switch';
 
-const mockCompetitors: any[] = [];
-
 export const ProductDetails = () => {
-  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { currencySymbol } = useAuth();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -23,13 +28,32 @@ export const ProductDetails = () => {
   const [isEditSlideOverOpen, setIsEditSlideOverOpen] = useState(false);
   const [isFormDirty, setIsFormDirty] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [competitorToDelete, setCompetitorToDelete] = useState<CompetitorProduct | null>(null);
+  const [competitors, setCompetitors] = useState<CompetitorProduct[]>([]);
+  const [isAddCompetitorModalOpen, setIsAddCompetitorModalOpen] = useState(false);
+  const [editingCompetitor, setEditingCompetitor] = useState<CompetitorProduct | undefined>();
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const [isAddMenuEmptyOpen, setIsAddMenuEmptyOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [priceHistories, setPriceHistories] = useState<Record<string, PriceHistoryPoint[]>>({});
+  const [selectedCompetitorIds, setSelectedCompetitorIds] = useState<Set<string>>(new Set());
+  const [timeRange, setTimeRange] = useState<30 | 90 | 365>(30);
+  const [isLoadingHistories, setIsLoadingHistories] = useState(false);
+  const [ownHistory, setOwnHistory] = useState<PriceHistoryPoint[]>([]);
+  const [analysis, setAnalysis] = useState<{ cheapest_price: number | null, avg_price: number | null, highest_price: number | null } | null>(null);
 
   const fetchProduct = async () => {
     if (!id) return;
     try {
       setIsLoading(true);
-      const data = await getProduct(id);
-      setProduct(data);
+      const [productData, competitorsData, analysisData] = await Promise.all([
+        getProduct(id),
+        fetchCompetitors(id),
+        getProductAnalysis(id).catch(() => null)
+      ]);
+      setProduct(productData);
+      setCompetitors(competitorsData);
+      setAnalysis(analysisData);
     } catch (error) {
       console.error(error);
     } finally {
@@ -40,6 +64,46 @@ export const ProductDetails = () => {
   useEffect(() => {
     fetchProduct();
   }, [id]);
+
+  useEffect(() => {
+    if (competitors.length > 0 && selectedCompetitorIds.size === 0) {
+      setSelectedCompetitorIds(new Set(competitors.slice(0, 3).map(c => c.id)));
+    }
+  }, [competitors]);
+
+  useEffect(() => {
+    const loadHistories = async () => {
+      if (!id || competitors.length === 0) return;
+      setIsLoadingHistories(true);
+      
+      try {
+        const ownRes = await getProductHistory(id);
+        setOwnHistory(ownRes.history);
+      } catch (e) {
+        console.error(e);
+      }
+
+      const histories: Record<string, PriceHistoryPoint[]> = {};
+      await Promise.all(competitors.map(async (comp) => {
+        try {
+          const res = await fetchCompetitorHistory(id, comp.id);
+          histories[comp.id] = res.history;
+        } catch (e) {
+          console.error(e);
+        }
+      }));
+      setPriceHistories(histories);
+      setIsLoadingHistories(false);
+    };
+    loadHistories();
+  }, [competitors, id]);
+
+  const toggleCompetitor = (compId: string) => {
+    const newSet = new Set(selectedCompetitorIds);
+    if (newSet.has(compId)) newSet.delete(compId);
+    else newSet.add(compId);
+    setSelectedCompetitorIds(newSet);
+  };
 
   const handleDeleteClick = () => {
     setIsManageOpen(false);
@@ -71,6 +135,234 @@ export const ProductDetails = () => {
       fetchProduct();
     }
   };
+
+  const handleMatchPrice = async (price: number | undefined) => {
+    if (price === undefined || !id || !product) return;
+    try {
+      const result = await updateProduct(id, { ...product, my_current_price: price } as Product);
+      setProduct(result);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleAddCompetitor = async (url: string) => {
+    if (id) {
+      if (editingCompetitor) {
+        await updateCompetitor(id, editingCompetitor.id, url);
+      } else {
+        await addCompetitor(id, url);
+      }
+      const competitorsData = await fetchCompetitors(id);
+      setCompetitors(competitorsData);
+      setEditingCompetitor(undefined);
+    }
+  };
+
+  const handleDeleteCompetitor = async (competitorId: string) => {
+    if (id) {
+      await deleteCompetitor(id, competitorId);
+      const competitorsData = await fetchCompetitors(id);
+      setCompetitors(competitorsData);
+    }
+  };
+
+  const handleImportCompetitors = async (file: File) => {
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = read(data);
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows: any[][] = utils.sheet_to_json(firstSheet, { header: 1 });
+      
+      let urlColIndex = -1;
+      const headers = rows[0] || [];
+      for (let i = 0; i < headers.length; i++) {
+        if (typeof headers[i] === 'string' && headers[i].toLowerCase().includes('url')) {
+          urlColIndex = i;
+          break;
+        }
+      }
+      
+      if (urlColIndex === -1) {
+        urlColIndex = 0;
+      }
+      
+      const urls: string[] = [];
+      const startIndex = (headers[urlColIndex] && typeof headers[urlColIndex] === 'string' && headers[urlColIndex].toLowerCase().includes('url')) ? 1 : 0;
+
+      for (let i = startIndex; i < rows.length; i++) {
+        const row = rows[i];
+        if (row && row[urlColIndex]) {
+          const rawUrl = String(row[urlColIndex]).trim();
+          if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
+            urls.push(rawUrl);
+          }
+        }
+      }
+      
+      if (urls.length === 0) {
+        alert(t('products.details.competitors.importModal.errors.noValidLinks', 'Aucun lien valide trouvé dans le fichier.'));
+        return;
+      }
+      
+      if (id) {
+        for (const url of urls) {
+          try {
+            await addCompetitor(id, url);
+          } catch (e) {
+            console.error("Failed to import URL:", url, e);
+          }
+        }
+        
+        const competitorsData = await fetchCompetitors(id);
+        setCompetitors(competitorsData);
+        setIsImportModalOpen(false);
+      }
+    } catch (e) {
+      console.error(e);
+      alert(t('products.details.competitors.importModal.errors.generic', 'Une erreur est survenue lors de la lecture du fichier.'));
+    }
+  };
+
+  const handleExportExcel = () => {
+    if (!product) return;
+
+    const summaryData = competitors.map(comp => {
+      const priceDiff = comp.current_price && product.my_current_price
+        ? ((comp.current_price - product.my_current_price) / product.my_current_price) * 100
+        : null;
+
+      return {
+        'Boutique': comp.competitor.name,
+        'Lien': comp.product_url,
+        [`Son Prix (${currencySymbol})`]: comp.current_price || 'N/A',
+        [`Mon Prix (${currencySymbol})`]: product.my_current_price || 'N/A',
+        'En Stock': comp.is_in_stock ? 'Oui' : 'Non',
+        'Différence (%)': priceDiff !== null ? priceDiff.toFixed(2) : 'N/A',
+        'Dernière mise à jour': comp.last_scraped_at ? new Date(comp.last_scraped_at).toLocaleDateString() : 'N/A'
+      };
+    });
+
+    const summarySheet = utils.json_to_sheet(summaryData);
+
+    const exportDateMap: Record<string, any> = {};
+
+    ownHistory.forEach(point => {
+      const d = new Date(point.recorded_at);
+      const dStr = d.toLocaleDateString();
+      if (!exportDateMap[dStr]) {
+        exportDateMap[dStr] = { 'Date': dStr };
+      }
+      exportDateMap[dStr][`Mon Prix (${currencySymbol})`] = point.price;
+    });
+
+    Object.entries(priceHistories).forEach(([compId, history]) => {
+      const comp = competitors.find(c => c.id === compId);
+      if (!comp) return;
+      
+      history.forEach(point => {
+        const d = new Date(point.recorded_at);
+        const dStr = d.toLocaleDateString();
+        if (!exportDateMap[dStr]) {
+          exportDateMap[dStr] = { 'Date': dStr };
+        }
+        exportDateMap[dStr][comp.competitor.name] = point.price;
+        if (exportDateMap[dStr][`Mon Prix (${currencySymbol})`] === undefined) {
+          exportDateMap[dStr][`Mon Prix (${currencySymbol})`] = product.my_current_price;
+        }
+      });
+    });
+    
+    const historyData = Object.values(exportDateMap).sort((a, b) => new Date(a.Date).getTime() - new Date(b.Date).getTime());
+    const historySheet = utils.json_to_sheet(historyData);
+
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, summarySheet, 'Résumé');
+    utils.book_append_sheet(wb, historySheet, 'Historique des prix');
+
+    const safeName = product.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    writeFile(wb, `pricesneak_analyse_${safeName}.xlsx`);
+    setIsManageOpen(false);
+  };
+
+  const renderAddCompetitorDropdown = (isOpenState: boolean, setIsOpenState: (v: boolean) => void) => (
+    <div className="relative group w-full sm:w-auto">
+      <Button variant="primary" className="flex items-center justify-center gap-2 shadow-sm w-full sm:w-auto" onClick={() => setIsOpenState(!isOpenState)}>
+        <Plus className="w-4 h-4" />
+        {t('products.add_competitor')}
+        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpenState ? 'rotate-180' : ''}`} />
+      </Button>
+      
+      {isOpenState && (
+        <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-full sm:w-56 bg-white border border-slate-200 rounded-xl shadow-lg py-2 z-50 animate-in fade-in slide-in-from-top-2 origin-top sm:origin-top-right">
+          <button 
+            onClick={() => { setIsOpenState(false); setIsAddCompetitorModalOpen(true); }}
+            className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            {t('products.manual_entry', 'Saisie Manuelle')}
+          </button>
+          <button 
+            onClick={() => { setIsOpenState(false); setIsImportModalOpen(true); }}
+            className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            {t('products.import_file', 'Importer Fichier')}
+          </button>
+          <div className="h-px bg-slate-100 my-1"></div>
+          <button 
+            disabled
+            className="w-full text-left px-4 py-2 text-sm text-slate-400 cursor-not-allowed flex items-center gap-2"
+          >
+            <Search className="w-4 h-4" />
+            Smart Search (Coming Soon)
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  const chartData = useMemo(() => {
+    if (!product) return [];
+    
+    const dateMap: Record<string, any> = {};
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - timeRange);
+    
+    ownHistory.forEach(point => {
+      const d = new Date(point.recorded_at);
+      if (d < cutoffDate) return;
+      
+      const dateStr = d.toLocaleDateString();
+      if (!dateMap[dateStr]) {
+        dateMap[dateStr] = { date: dateStr };
+      }
+      dateMap[dateStr]['You'] = point.price;
+    });
+
+    Object.entries(priceHistories).forEach(([compId, history]) => {
+      const comp = competitors.find(c => c.id === compId);
+      if (!comp || !selectedCompetitorIds.has(compId)) return;
+      
+      history.forEach(point => {
+        const d = new Date(point.recorded_at);
+        if (d < cutoffDate) return;
+        
+        const dateStr = d.toLocaleDateString();
+        if (!dateMap[dateStr]) {
+          dateMap[dateStr] = { date: dateStr };
+        }
+        dateMap[dateStr][comp.competitor.name] = point.price;
+        if (dateMap[dateStr]['You'] === undefined) {
+          dateMap[dateStr]['You'] = product.my_current_price;
+        }
+      });
+    });
+    
+    return Object.values(dateMap).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [priceHistories, ownHistory, competitors, product, selectedCompetitorIds, timeRange]);
+
+  const chartColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
   if (isLoading) {
     return (
@@ -124,9 +416,12 @@ export const ProductDetails = () => {
           
           {isManageOpen && (
             <div className="absolute left-0 md:left-auto md:right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-lg py-2 z-50 animate-in fade-in slide-in-from-top-2 origin-top-left md:origin-top-right">
-              <button className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2">
+              <button 
+                onClick={handleExportExcel}
+                className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2"
+              >
                 <Download className="w-4 h-4" />
-                {t('products.export')}
+                {t('products.export')} (Excel)
               </button>
               <button 
                 onClick={() => { setIsManageOpen(false); setIsEditSlideOverOpen(true); }}
@@ -148,7 +443,7 @@ export const ProductDetails = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-6 pb-24 sm:pb-12">
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
             <div className="flex-1">
@@ -158,10 +453,10 @@ export const ProductDetails = () => {
               <div className="text-2xl font-bold text-slate-900 mb-4">{product.name}</div>
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3">
                 <div className="text-3xl font-bold text-brand-primary leading-none">
-                  {product.my_current_price ? `$${product.my_current_price.toFixed(2)}` : 'N/A'}
+                  {product.my_current_price ? `${currencySymbol}${product.my_current_price.toFixed(2)}` : 'N/A'}
                 </div>
                 <div className="text-sm font-medium text-slate-500 mt-1 sm:mt-0">
-                  {t('products.cost_price')}: ${product.cost_price.toFixed(2)}
+                  {t('products.cost_price')}: {currencySymbol}{product.cost_price.toFixed(2)}
                 </div>
               </div>
             </div>
@@ -181,66 +476,115 @@ export const ProductDetails = () => {
           </div>
         </div>
 
+        {analysis && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col items-center justify-center text-center">
+              <span className="text-sm font-medium text-slate-500 mb-1">{t('products.table_cheapest')}</span>
+              <span className="text-2xl font-bold text-emerald-600">
+                {analysis.cheapest_price ? `${currencySymbol}${analysis.cheapest_price.toFixed(2)}` : '-'}
+              </span>
+            </div>
+            <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col items-center justify-center text-center">
+              <span className="text-sm font-medium text-slate-500 mb-1">{t('products.table_avg')}</span>
+              <span className="text-2xl font-bold text-brand-primary">
+                {analysis.avg_price ? `${currencySymbol}${analysis.avg_price.toFixed(2)}` : '-'}
+              </span>
+            </div>
+            <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col items-center justify-center text-center">
+              <span className="text-sm font-medium text-slate-500 mb-1">{t('products.table_highest')}</span>
+              <span className="text-2xl font-bold text-red-600">
+                {analysis.highest_price ? `${currencySymbol}${analysis.highest_price.toFixed(2)}` : '-'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Historique des prix */}
         <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 gap-4">
             <div>
               <h2 className="text-xl font-bold text-slate-900">{t('products.historical_chart')}</h2>
               <p className="text-xs text-slate-500 mt-1">{t('products.showing_all')}</p>
             </div>
-            <div className="flex flex-wrap items-center gap-4">
-              {mockCompetitors.length > 0 && (
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-4">
+              {competitors.length > 0 && (
                 <>
-                  <div className="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" defaultChecked className="rounded border-slate-300 text-brand-primary focus:ring-brand-primary w-4 h-4" />
-                      <span className="text-sm text-slate-700">Amazon</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" className="rounded border-slate-300 text-brand-primary focus:ring-brand-primary w-4 h-4" />
-                      <span className="text-sm text-slate-700">BestBuy</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" className="rounded border-slate-300 text-brand-primary focus:ring-brand-primary w-4 h-4" />
-                      <span className="text-sm text-slate-700">Walmart</span>
-                    </label>
+                  <div className="flex flex-wrap items-center gap-3 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
+                    {competitors.map((comp) => (
+                      <label key={comp.id} className="flex items-center gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedCompetitorIds.has(comp.id)}
+                          onChange={() => toggleCompetitor(comp.id)}
+                          className="rounded border-slate-300 text-brand-primary focus:ring-brand-primary w-4 h-4" 
+                        />
+                        <span className="text-sm text-slate-700">{comp.competitor.name}</span>
+                      </label>
+                    ))}
                   </div>
-                  <div className="flex bg-slate-50 p-1 rounded-full border border-slate-100">
-                    <button className="px-4 py-1.5 text-sm font-medium text-slate-500 rounded-full hover:bg-slate-100">30D</button>
-                    <button className="px-4 py-1.5 text-sm font-medium text-white bg-brand-primary rounded-full shadow-sm">90D</button>
-                    <button className="px-4 py-1.5 text-sm font-medium text-slate-500 rounded-full hover:bg-slate-100">1Y</button>
+                  <div className="flex bg-slate-50 p-1 rounded-full border border-slate-100 justify-between sm:justify-start">
+                    <button 
+                      onClick={() => setTimeRange(30)}
+                      className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${timeRange === 30 ? 'text-white bg-brand-primary shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}
+                    >30D</button>
+                    <button 
+                      onClick={() => setTimeRange(90)}
+                      className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${timeRange === 90 ? 'text-white bg-brand-primary shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}
+                    >90D</button>
+                    <button 
+                      onClick={() => setTimeRange(365)}
+                      className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${timeRange === 365 ? 'text-white bg-brand-primary shadow-sm' : 'text-slate-500 hover:bg-slate-100'}`}
+                    >1Y</button>
                   </div>
                 </>
               )}
             </div>
           </div>
           
-          {mockCompetitors.length > 0 ? (
-            <div className="h-64 w-full flex items-end justify-between gap-2 relative">
-              <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-slate-400 pb-6">
-                <span>$150</span>
-                <span>$100</span>
-                <span>$50</span>
-              </div>
-              <div className="absolute inset-0 pl-10 flex flex-col justify-between pb-6 pointer-events-none">
-                <div className="w-full h-px bg-slate-100"></div>
-                <div className="w-full h-px bg-slate-100"></div>
-                <div className="w-full h-px bg-slate-100"></div>
-              </div>
-              <div className="flex-1 pl-12 h-full flex items-end justify-around pb-6 relative z-10">
-                <div className="absolute -top-4 right-0 flex gap-4">
-                  <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-blue-500"></div><span className="text-xs text-slate-500">You</span></div>
-                  <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-sm bg-slate-300"></div><span className="text-xs text-slate-500">Amazon</span></div>
+          {competitors.length > 0 ? (
+            <div className="h-80 w-full flex items-end justify-between gap-2 relative pt-4">
+              {isLoadingHistories ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="inline-block w-6 h-6 border-2 border-slate-200 border-t-brand-primary rounded-full animate-spin"></div>
                 </div>
-                {[60, 70, 65, 80, 90].map((h, i) => (
-                  <div key={i} className="flex flex-col items-center gap-2 group h-full justify-end">
-                    <div className={`flex gap-1 items-end h-[${h}%]`}>
-                      <div className="w-4 bg-blue-500 rounded-t-sm h-full group-hover:opacity-80 transition-opacity" style={{ height: `${h}%` }}></div>
-                      <div className="w-4 bg-slate-300 rounded-t-sm group-hover:opacity-80 transition-opacity" style={{ height: `${h - 5}%` }}></div>
-                    </div>
-                    <span className="text-xs text-slate-400 mt-2">Sep {1 + i * 7}</span>
-                  </div>
-                ))}
-              </div>
+              ) : selectedCompetitorIds.size === 0 ? (
+                <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                  Sélectionnez au moins un concurrent pour afficher l'historique
+                </div>
+              ) : chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} minTickGap={30} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(val) => `${currencySymbol}${val}`} dx={-10} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
+                      formatter={(value: any) => [`${currencySymbol}${Number(value).toFixed(2)}`, '']}
+                    />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                    <Line type="monotone" dataKey="You" stroke="#0f172a" strokeWidth={2} dot={false} strokeDasharray="5 5" />
+                    {Array.from(selectedCompetitorIds).map((compId, idx) => {
+                      const comp = competitors.find(c => c.id === compId);
+                      if (!comp) return null;
+                      return (
+                        <Line 
+                          key={compId}
+                          type="monotone" 
+                          dataKey={comp.competitor.name} 
+                          stroke={chartColors[idx % chartColors.length]} 
+                          strokeWidth={2}
+                          dot={false}
+                          activeDot={{ r: 6, strokeWidth: 0 }}
+                        />
+                      );
+                    })}
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                  Aucune donnée disponible pour cette période
+                </div>
+              )}
             </div>
           ) : (
             <div className="h-64 w-full flex flex-col items-center justify-center border-t border-slate-100 mt-2 pt-6">
@@ -256,20 +600,15 @@ export const ProductDetails = () => {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-sm transition-shadow">
-          <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-            <div>
+          <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="w-full sm:w-auto">
               <h2 className="text-xl font-bold text-slate-900">{t('products.comparison_title')}</h2>
               <p className="text-sm text-slate-500 mt-1">{t('products.comparison_desc')}</p>
             </div>
-            {mockCompetitors.length > 0 && (
-              <Button variant="primary" className="flex items-center gap-2 shadow-sm">
-                <Plus className="w-4 h-4" />
-                {t('products.add_competitor')}
-              </Button>
-            )}
+            {competitors.length > 0 && renderAddCompetitorDropdown(isAddMenuOpen, setIsAddMenuOpen)}
           </div>
           
-          {mockCompetitors.length > 0 ? (
+          {competitors.length > 0 ? (
             <>
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left text-sm whitespace-nowrap">
@@ -283,63 +622,129 @@ export const ProductDetails = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    <tr className="hover:bg-slate-50 transition-colors group">
-                      <td className="p-4 pl-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 bg-slate-800 rounded flex items-center justify-center text-[10px] font-bold text-white">A</div>
-                          <span className="text-sm font-medium text-slate-900">Amazon.com</span>
-                        </div>
-                      </td>
-                      <td className="p-4 text-slate-900 font-medium">$348.00</td>
-                      <td className="p-4">
-                        <span className="text-red-600 font-medium text-sm">-12.5%</span>
-                      </td>
-                      <td className="p-4 text-xs text-slate-500">2 mins ago</td>
-                      <td className="p-4 pr-6 text-right">
-                        <Button variant="secondary" size="sm">{t('products.match_price')}</Button>
-                      </td>
-                    </tr>
+                    {competitors.map((comp) => {
+                      const priceDiff = comp.current_price && product.my_current_price
+                        ? ((comp.current_price - product.my_current_price) / product.my_current_price) * 100
+                        : null;
+                      
+                      return (
+                        <tr key={comp.id} className="hover:bg-slate-50 transition-colors group">
+                          <td className="p-4 pl-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-6 h-6 bg-slate-800 rounded flex items-center justify-center text-[10px] font-bold text-white">
+                                {comp.competitor.name.charAt(0).toUpperCase()}
+                              </div>
+                              <a href={comp.product_url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-brand-primary hover:underline">
+                                {comp.competitor.name}
+                              </a>
+                            </div>
+                          </td>
+                          <td className="p-4 text-slate-900 font-medium">
+                            {comp.current_price ? `${currencySymbol}${comp.current_price.toFixed(2)}` : 'N/A'}
+                          </td>
+                          <td className="p-4">
+                            {priceDiff !== null ? (
+                              <span className={`font-medium text-sm ${priceDiff < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                                {priceDiff > 0 ? '+' : ''}{priceDiff.toFixed(1)}%
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">-</span>
+                            )}
+                          </td>
+                          <td className="p-4 text-xs text-slate-500">
+                            {comp.last_scraped_at ? new Date(comp.last_scraped_at).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="p-4 pr-6 text-right flex items-center justify-end gap-2">
+                            <Button 
+                              variant="secondary" 
+                              size="sm"
+                              onClick={() => handleMatchPrice(comp.current_price)}
+                              disabled={!comp.current_price}
+                            >
+                              {t('products.match_price')}
+                            </Button>
+                            <button 
+                              onClick={() => { setEditingCompetitor(comp); setIsAddCompetitorModalOpen(true); }}
+                              className="p-1.5 text-slate-400 hover:text-brand-primary hover:bg-brand-primary/10 rounded transition-colors"
+                              title={t('products.edit')}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => setCompetitorToDelete(comp)}
+                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                              title={t('products.delete')}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
               
               <div className="md:hidden space-y-4">
-                <div className="p-4 hover:bg-slate-50 transition-colors flex flex-col">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center text-xs font-bold text-white">A</div>
-                      <span className="text-sm font-bold text-slate-900">Amazon.com</span>
+                {competitors.map((comp) => (
+                  <div key={comp.id} className="p-4 hover:bg-slate-50 transition-colors flex flex-col border-t border-slate-100">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center text-xs font-bold text-white">
+                          {comp.competitor.name.charAt(0).toUpperCase()}
+                        </div>
+                        <a href={comp.product_url} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-brand-primary hover:underline">
+                          {comp.competitor.name}
+                        </a>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-xs text-slate-500 mb-1">{t('products.comp_table_price')}</div>
+                        <div className="font-bold text-slate-900">
+                          {comp.current_price ? `${currencySymbol}${comp.current_price.toFixed(2)}` : 'N/A'}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <span className="font-bold text-slate-900 text-lg">$348.00</span>
-                      <div className="text-red-600 font-medium text-xs mt-0.5">-12.5%</div>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-xs text-slate-500 flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                        {comp.last_scraped_at ? new Date(comp.last_scraped_at).toLocaleDateString() : 'N/A'}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="secondary" 
+                          size="sm"
+                          onClick={() => handleMatchPrice(comp.current_price)}
+                          disabled={!comp.current_price}
+                        >
+                          {t('products.match_price')}
+                        </Button>
+                        <button 
+                          onClick={() => { setEditingCompetitor(comp); setIsAddCompetitorModalOpen(true); }}
+                          className="p-1.5 text-slate-400 hover:text-brand-primary rounded transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => setCompetitorToDelete(comp)}
+                          className="p-1.5 text-slate-400 hover:text-red-600 rounded transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-xs text-slate-500 flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                      2 mins ago
-                    </span>
-                    <Button variant="secondary" size="sm">
-                      {t('products.match_price')}
-                    </Button>
-                  </div>
-                </div>
+                ))}
               </div>
             </>
           ) : (
             <div className="p-16 flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 rounded-full bg-blue-50 border-2 border-blue-100 flex items-center justify-center mb-5 text-brand-primary">
-                <Plus className="w-8 h-8" />
+              <div className="mb-6">
+                {renderAddCompetitorDropdown(isAddMenuEmptyOpen, setIsAddMenuEmptyOpen)}
               </div>
               <h3 className="text-lg font-bold text-slate-900 mb-2">Aucun concurrent défini</h3>
-              <p className="text-slate-500 max-w-sm mb-6 leading-relaxed">
+              <p className="text-slate-500 max-w-sm leading-relaxed">
                 Gardez un œil sur le marché en ajoutant votre premier concurrent pour suivre automatiquement ses changements de prix.
               </p>
-              <Button variant="primary" className="flex items-center gap-2 shadow-sm mt-2">
-                <Plus className="w-4 h-4" />
-                {t('products.add_competitor')}
-              </Button>
             </div>
           )}
         </div>
@@ -367,6 +772,31 @@ export const ProductDetails = () => {
         onConfirm={confirmDelete}
         onCancel={() => setIsDeleteModalOpen(false)}
         variant="danger"
+      />
+      <ConfirmModal 
+        isOpen={!!competitorToDelete}
+        title="Supprimer ce concurrent ?"
+        message={`Êtes-vous sûr de vouloir supprimer ${competitorToDelete?.competitor?.name || 'ce concurrent'} de la liste de vos concurrents ? L'historique des prix associé sera également perdu. Cette action est irréversible.`}
+        confirmText={t('common.delete', 'Supprimer')}
+        onConfirm={() => {
+          if (competitorToDelete) {
+            handleDeleteCompetitor(competitorToDelete.id);
+            setCompetitorToDelete(null);
+          }
+        }}
+        onCancel={() => setCompetitorToDelete(null)}
+        variant="danger"
+      />
+      <AddCompetitorModal
+        isOpen={isAddCompetitorModalOpen}
+        onClose={() => { setIsAddCompetitorModalOpen(false); setEditingCompetitor(undefined); }}
+        onSubmit={handleAddCompetitor}
+        initialData={editingCompetitor}
+      />
+      <ImportCompetitorsModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={handleImportCompetitors}
       />
     </DashboardLayout>
   );

@@ -53,7 +53,7 @@ export function ImportProductsModal({ isOpen, onClose, onImport }: ImportProduct
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     ];
     
-    // Check extension as fallback
+    // MIME types vary by OS, verify extension instead
     const ext = file.name.split('.').pop()?.toLowerCase();
     const isValidExt = ext === 'csv' || ext === 'xls' || ext === 'xlsx';
 
