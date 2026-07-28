@@ -15,6 +15,9 @@ interface AuthContextType {
   login: (token: string, userData: User) => void;
   logout: () => void;
   updateUser: (userData: User) => void;
+  currency: string;
+  currencySymbol: string;
+  updateCurrency: (c: string) => void;
   isLoading: boolean;
 }
 
@@ -24,6 +27,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [isLoading, setIsLoading] = useState(true);
+  const [currency, setCurrency] = useState<string>('USD');
+
+  const getCurrencySymbol = (c: string) => {
+    switch (c) {
+      case 'EUR': return '€';
+      case 'GBP': return '£';
+      default: return '$';
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('token');
+    setToken(null);
+    setUser(null);
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -37,8 +55,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           apiFetch<any>('/api/auth/me/settings').catch(() => null)
         ]);
         setUser(userData);
-        if (settingsData && settingsData.language) {
-          i18n.changeLanguage(settingsData.language.toLowerCase());
+        if (settingsData) {
+          if (settingsData.language) {
+            i18n.changeLanguage(settingsData.language.toLowerCase());
+          }
+          if (settingsData.currency) {
+            setCurrency(settingsData.currency);
+          }
         }
       } catch (error) {
         console.error("Token invalide ou session expirée", error);
@@ -57,23 +80,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setUser(userData);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
-    setUser(null);
-  };
-
   const updateUser = (userData: User) => {
     setUser(userData);
   };
 
+  const updateCurrency = (c: string) => {
+    setCurrency(c);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, updateUser, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, updateUser, currency, currencySymbol: getCurrencySymbol(currency), updateCurrency, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

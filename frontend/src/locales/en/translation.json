@@ -143,7 +143,20 @@
     "proceed": "Yes, proceed",
     "discard_changes": "Discard changes",
     "discard_confirm": "You have unsaved changes. Are you sure you want to close without saving?",
-    "discard": "Discard"
+    "discard": "Discard without saving",
+    "details": {
+      "competitors": {
+        "addModal": {
+          "title": "Add Competitor Product",
+          "urlLabel": "Competitor Product URL",
+          "helpText": "Paste the direct link to the product page (e.g., amazon.com, bestbuy.com...)",
+          "errors": {
+            "required": "URL is required",
+            "invalidUrl": "Please enter a valid URL (http://...)"
+          }
+        }
+      }
+    }
   },
   "integrations": {
     "title": "Integrations",

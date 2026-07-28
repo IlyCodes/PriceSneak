@@ -47,12 +47,12 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
   const response = await fetch(`${BASE_URL}${endpoint}`, config);
 
   if (!response.ok) {
-    let errorMessage = 'Une erreur réseau est survenue.';
+    let errorMessage: string;
     try {
       const errorData = await response.json();
       errorMessage = errorData.detail || JSON.stringify(errorData);
-    } catch (e) {
-      errorMessage = response.statusText;
+    } catch {
+      errorMessage = response.statusText || 'Une erreur réseau est survenue.';
     }
     throw new Error(errorMessage);
   }

@@ -5,9 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Switch } from '../../../components/ui/Switch';
+import { useAuth } from '../../auth/context/AuthContext';
 
 export const PreferencesForm = () => {
   const { t, i18n } = useTranslation();
+  const { updateCurrency } = useAuth();
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
@@ -19,7 +21,7 @@ export const PreferencesForm = () => {
       try {
         const data = await getSettings();
         setSettings(data);
-      } catch (err: any) {
+      } catch {
         setError(t('preferences.error_load'));
       } finally {
         setIsFetching(false);
@@ -40,6 +42,7 @@ export const PreferencesForm = () => {
       const updated = await updateSettings(settings);
       setSettings(updated);
       i18n.changeLanguage(updated.language.toLowerCase());
+      updateCurrency(updated.currency);
       setSuccess(t('preferences.success'));
     } catch (err: any) {
       setError(err.message || t('preferences.error_save'));

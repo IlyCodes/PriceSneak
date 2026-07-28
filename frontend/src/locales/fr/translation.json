@@ -143,7 +143,20 @@
     "proceed": "Oui, continuer",
     "discard_changes": "Ignorer les modifications",
     "discard_confirm": "Vos modifications ne sont pas enregistrées. Êtes-vous sûr de vouloir fermer ?",
-    "discard": "Fermer sans sauvegarder"
+    "discard": "Fermer sans sauvegarder",
+    "details": {
+      "competitors": {
+        "addModal": {
+          "title": "Ajouter un produit concurrent",
+          "urlLabel": "URL du produit concurrent",
+          "helpText": "Collez le lien direct vers la page du produit (ex: amazon.fr, fnac.com...)",
+          "errors": {
+            "required": "L'URL est requise",
+            "invalidUrl": "Veuillez entrer une URL valide (http://...)"
+          }
+        }
+      }
+    }
   },
   "integrations": {
     "title": "Intégrations",
