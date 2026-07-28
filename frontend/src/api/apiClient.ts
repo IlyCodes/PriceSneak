@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8000';
+export const BASE_URL = 'http://localhost:8000';
 
 interface FetchOptions extends RequestInit {
   data?: any; // Objet JSON ou URLSearchParams (pour le login)
@@ -29,6 +29,9 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
     if (data instanceof URLSearchParams) {
       body = data;
       delete headers['Content-Type'];
+    } else if (data instanceof FormData) {
+      body = data;
+      delete headers['Content-Type'];
     } else {
       body = JSON.stringify(data);
     }
@@ -52,6 +55,10 @@ export async function apiFetch<T>(endpoint: string, options: FetchOptions = {}):
       errorMessage = response.statusText;
     }
     throw new Error(errorMessage);
+  }
+
+  if (response.status === 204) {
+    return {} as T;
   }
 
   return response.json();

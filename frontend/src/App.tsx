@@ -5,6 +5,8 @@ import { Login } from './features/auth/routes/Login';
 import { Register } from './features/auth/routes/Register';
 import { Settings as SettingsPage } from './features/settings/routes/Settings';
 import { Dashboard } from './features/dashboard/routes/Dashboard';
+import { ProductsList } from './features/products/routes/ProductsList';
+import { ProductDetails } from './features/products/routes/ProductDetails';
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
 
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/products" element={<ProductsList />} />
+            <Route path="/products/:id" element={<ProductDetails />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Routes>
