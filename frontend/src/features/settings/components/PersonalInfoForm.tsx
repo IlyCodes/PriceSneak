@@ -37,7 +37,7 @@ export const PersonalInfoForm = () => {
       
       const updatedUser = await updateProfileInfo({ name, email });
       setSuccess(t('personal_info.success'));
-      updateUser(updatedUser);
+      updateUser(updatedUser as any);
 
     } catch (err: any) {
       setError(err.message || t('personal_info.error_save'));
