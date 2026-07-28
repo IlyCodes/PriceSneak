@@ -5,41 +5,54 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from backend.core.database import Base, TimestampMixin
 
+
 class ValueTypeEnum(str, enum.Enum):
     PERCENTAGE = "percentage"
     AMOUNT = "amount"
 
+
 class ComparisonOperatorEnum(str, enum.Enum):
     LOWER_THAN = "lower_than"
     HIGHER_THAN = "higher_than"
+
 
 class PositionEnum(str, enum.Enum):
     CHEAPEST = "cheapest"
     AVG = "avg"
     HIGHEST = "highest"
 
+
 class FrequencyEnum(str, enum.Enum):
     DAILY = "daily"
     WEEKLY = "weekly"
     MONTHLY = "monthly"
 
+
 class EventTypeEnum(str, enum.Enum):
     PRICE_DROP = "price_drop"
     PRICE_INCREASE = "price_increase"
+
 
 class EventScopeEnum(str, enum.Enum):
     COMPETITOR = "competitor"
     MARKET_AVERAGE = "market_average"
 
+
 class PricingRule(Base, TimestampMixin):
     __tablename__ = "pricing_rules"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        nullable=False,
+    )
     is_enabled = Column(Boolean, default=True, nullable=False)
     is_equal = Column(Boolean, default=False, nullable=False)
     auto_update_price = Column(Boolean, default=False, nullable=False)
     value = Column(Numeric(10, 2), nullable=True)
-    
+
     value_type = Column(SQLEnum(ValueTypeEnum), nullable=True)
     comparison_operator = Column(SQLEnum(ComparisonOperatorEnum), nullable=True)
     position = Column(SQLEnum(PositionEnum), nullable=False)

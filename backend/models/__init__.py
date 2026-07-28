@@ -17,5 +17,5 @@ __all__ = [
     "ProductAnalysis",
     "Competitor",
     "CompetitorProduct",
-    "Alert"
+    "Alert",
 ]

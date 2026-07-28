@@ -15,12 +15,10 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+
 # Mixin réutilisable pour injecter created_at et updated_at automatiquement dans toutes les tables
 class TimestampMixin:
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(
-        DateTime, 
-        default=datetime.utcnow, 
-        onupdate=datetime.utcnow, 
-        nullable=False
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
