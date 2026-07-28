@@ -10,6 +10,7 @@ from backend.models.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
+
 def get_db() -> Generator:
     """Ouvre et referme proprement une session PostgreSQL pour chaque requête."""
     try:
@@ -17,6 +18,7 @@ def get_db() -> Generator:
         yield db
     finally:
         db.close()
+
 
 def get_current_user(
     db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)
@@ -28,13 +30,15 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         user_id_str: str = payload.get("sub")
         if user_id_str is None:
             raise credentials_exception
     except jwt.PyJWTError:
         raise credentials_exception
-    
+
     user = db.query(User).filter(User.id == user_id_str).first()
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur introuvable")

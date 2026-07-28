@@ -1,12 +1,25 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.routes import auth, products
+from backend.api.routes import auth, products, competitors
+from backend.core.mongodb import connect_to_mongo, close_mongo_connection
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await connect_to_mongo()
+    yield
+    # Shutdown
+    await close_mongo_connection()
+
 
 app = FastAPI(
     title="PriceSneak API",
     description="Backend API for PriceSneak Competitive Intelligence Platform",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Configuration CORS pour autoriser le frontend React
@@ -20,6 +33,8 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(products.router, prefix="/api/products", tags=["Products"])
+app.include_router(competitors.router, prefix="/api/products", tags=["Competitors"])
+
 
 @app.get("/")
 async def root():
