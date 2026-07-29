@@ -57,3 +57,7 @@ export const getCompetitorPriceHistory = async (productId: string, competitorId:
 export const fetchCompetitorHistory = async (productId: string, competitorProductId: string): Promise<PriceHistoryResponse> => {
   return apiFetch<PriceHistoryResponse>(`/api/products/${productId}/competitors/${competitorProductId}/history`);
 };
+
+export const getGlobalCompetitors = async (): Promise<Competitor[]> => {
+  return apiFetch<Competitor[]>('/api/competitors/');
+};

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { getProduct, deleteProduct, updateProduct, getProductHistory, getProductAnalysis, type Product } from '../api/productsApi';
+import { getRules, type PricingRule } from '../../pricing-rules/api/rulesApi';
 import { fetchCompetitors, addCompetitor, updateCompetitor, deleteCompetitor, fetchCompetitorHistory, type CompetitorProduct, type PriceHistoryPoint } from '../api/competitorsApi';
 import { Settings, ChevronDown, Download, Edit2, Trash2, ArrowLeft, Plus, FileSpreadsheet, Search } from 'lucide-react';
 import { read, utils, writeFile } from 'xlsx';
@@ -41,19 +42,26 @@ export const ProductDetails = () => {
   const [isLoadingHistories, setIsLoadingHistories] = useState(false);
   const [ownHistory, setOwnHistory] = useState<PriceHistoryPoint[]>([]);
   const [analysis, setAnalysis] = useState<{ cheapest_price: number | null, avg_price: number | null, highest_price: number | null } | null>(null);
+  const [productRule, setProductRule] = useState<PricingRule | null>(null);
 
   const fetchProduct = async () => {
     if (!id) return;
     try {
       setIsLoading(true);
-      const [productData, competitorsData, analysisData] = await Promise.all([
+      const [productData, competitorsData, analysisData, rules] = await Promise.all([
         getProduct(id),
         fetchCompetitors(id),
-        getProductAnalysis(id).catch(() => null)
+        getProductAnalysis(id).catch(() => null),
+        getRules().catch(() => [])
       ]);
       setProduct(productData);
       setCompetitors(competitorsData);
       setAnalysis(analysisData);
+      if (productData.rule_id) {
+        setProductRule(rules.find(r => r.id === productData.rule_id) || null);
+      } else {
+        setProductRule(null);
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -463,10 +471,21 @@ export const ProductDetails = () => {
             
             <div className="flex flex-col sm:items-end pt-4 sm:pt-0 mt-2 sm:mt-0 border-t sm:border-t-0 border-slate-100">
               <div className="flex items-center justify-between sm:justify-end gap-3 mb-3 w-full sm:w-auto">
-                <span className={`text-sm sm:text-xs font-semibold ${product.is_active ? 'text-emerald-600' : 'text-slate-500'}`}>
-                  {product.is_active ? t('products.rule_active', 'Règle Activée') : t('products.rule_inactive', 'Règle Désactivée')}
-                </span>
-                <Switch checked={product.is_active} onChange={handleToggleActive} />
+                {product.rule_id && productRule ? (
+                  <button 
+                    onClick={() => navigate('/rules')}
+                    className={`text-sm font-semibold hover:underline ${product.is_active ? 'text-brand-primary' : 'text-slate-400'}`}
+                  >
+                    Règle: {productRule.name}
+                  </button>
+                ) : (
+                  <span className={`text-sm sm:text-xs font-semibold ${product.is_active ? 'text-emerald-600' : 'text-slate-500'}`}>
+                    {product.is_active ? t('products.rule_active', 'Règle Activée') : t('products.rule_inactive', 'Règle Désactivée')}
+                  </span>
+                )}
+                <div title={product.is_active ? t('products.rule_active', 'Règle Activée') : t('products.rule_inactive', 'Règle Désactivée')}>
+                  <Switch checked={product.is_active} onChange={handleToggleActive} />
+                </div>
               </div>
               <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-start w-full sm:w-auto">
                 <p className="text-xs text-slate-500 sm:order-last">{t('products.last_sync')}</p>

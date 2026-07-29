@@ -9,6 +9,7 @@ export interface Product {
   my_current_price?: number;
   cost_price: number;
   is_active: boolean;
+  rule_id?: string;
   created_at: string;
   analysis?: {
     cheapest_price: number | null;
