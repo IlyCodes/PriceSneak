@@ -67,6 +67,8 @@ def seed():
 
         print("Création des règles de tarification...")
         rule_match_cheapest = PricingRule(
+            name="Match Cheapest Competitor",
+            user_id=merchant.id,
             is_enabled=True,
             is_equal=True,  # On s'aligne exactement sur le prix
             position=PositionEnum.CHEAPEST,
@@ -75,6 +77,8 @@ def seed():
             event_scope=EventScopeEnum.MARKET_AVERAGE,
         )
         rule_lower_than_avg = PricingRule(
+            name="5% Lower than Average",
+            user_id=merchant.id,
             is_enabled=True,
             is_equal=False,
             value=5.00,
