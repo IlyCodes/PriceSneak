@@ -21,9 +21,8 @@ class User(Base, TimestampMixin):
     is_admin = Column(Boolean, default=False, nullable=False)
 
     # Relations ORM (Cascade delete si l'utilisateur supprime son compte)
-    products = relationship(
-        "Product", back_populates="user", cascade="all, delete-orphan"
-    )
+    products = relationship("Product", back_populates="user", cascade="all, delete-orphan")
+    pricing_rules = relationship("PricingRule", back_populates="user", cascade="all, delete-orphan")
     alerts = relationship("Alert", back_populates="user", cascade="all, delete-orphan")
     settings = relationship(
         "UserSettings",

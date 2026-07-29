@@ -1,6 +1,7 @@
+import datetime
 import uuid
 import enum
-from sqlalchemy import Column, Boolean, Numeric, Enum as SQLEnum
+from sqlalchemy import Column, Boolean, Numeric, String, DateTime, Enum as SQLEnum, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from backend.core.database import Base, TimestampMixin
@@ -48,6 +49,10 @@ class PricingRule(Base, TimestampMixin):
         unique=True,
         nullable=False,
     )
+    user_id = Column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    name = Column(String(255), nullable=False)
     is_enabled = Column(Boolean, default=True, nullable=False)
     is_equal = Column(Boolean, default=False, nullable=False)
     auto_update_price = Column(Boolean, default=False, nullable=False)
@@ -59,6 +64,10 @@ class PricingRule(Base, TimestampMixin):
     frequency = Column(SQLEnum(FrequencyEnum), nullable=True)
     event_type = Column(SQLEnum(EventTypeEnum), nullable=True)
     event_scope = Column(SQLEnum(EventScopeEnum), nullable=True)
+    competitor_id = Column(UUID(as_uuid=True), ForeignKey("competitors.id", ondelete="SET NULL"), nullable=True)
+    last_executed_at = Column(DateTime, nullable=True)
+
+    user = relationship("User", back_populates="pricing_rules")
 
     # Une règle s'applique à N produits (relation inversée)
     products = relationship("Product", back_populates="pricing_rule")
