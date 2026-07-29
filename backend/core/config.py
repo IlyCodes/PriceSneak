@@ -25,7 +25,10 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 10080
 
-    model_config = SettingsConfigDict(env_file=ENV_FILE_PATH, env_file_encoding="utf-8")
+    REDIS_URL: str = "redis://localhost:6379/0"
+    PROXY_URL: str | None = None
+
+    model_config = SettingsConfigDict(env_file=ENV_FILE_PATH, env_file_encoding="utf-8", extra="ignore")
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
