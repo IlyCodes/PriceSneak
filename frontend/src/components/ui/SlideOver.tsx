@@ -9,7 +9,7 @@ interface SlideOverProps {
   isOpen: boolean;
   onClose: (force?: boolean) => void;
   title: string;
-  children: React.ReactNode;
+  children: React.ReactNode | ((isExpanded: boolean) => React.ReactNode);
   isDirty?: boolean;
   expandUrl?: string; // If provided, shows the expand button
 }
@@ -34,7 +34,7 @@ export function SlideOver({ isOpen, onClose, title, children, isDirty = false, e
     onClose(true);
   };
 
-  // Handle ESC key
+  // Close modal automatically when ESC is pressed to ensure keyboard accessibility
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -45,7 +45,7 @@ export function SlideOver({ isOpen, onClose, title, children, isDirty = false, e
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, isDirty]);
 
-  // Focus trap
+  // Confine keyboard navigation within the modal to prevent interaction with background elements
   useEffect(() => {
     if (isOpen && panelRef.current) {
       const focusableElements = panelRef.current.querySelectorAll(
@@ -111,7 +111,7 @@ export function SlideOver({ isOpen, onClose, title, children, isDirty = false, e
       aria-modal="true"
     >
       <div className="absolute inset-0 overflow-hidden">
-        {/* Backdrop */}
+        {/* Semi-transparent overlay to dim the background and intercept click-away events */}
         <div 
           className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity" 
           aria-hidden="true" 
@@ -153,7 +153,7 @@ export function SlideOver({ isOpen, onClose, title, children, isDirty = false, e
                 </div>
               </div>
               <div className="relative flex-1 px-4 py-6 sm:px-6 overflow-y-auto">
-                {children}
+                {typeof children === 'function' ? children(isExpanded) : children}
               </div>
             </div>
           </div>
