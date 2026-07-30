@@ -8,7 +8,10 @@ from backend.api.deps import get_db, get_current_user
 from backend.models.user import User
 from backend.models.pricing_rule import PricingRule
 from backend.models.product import Product
+from backend.models.competitor_product import CompetitorProduct
 from backend.schemas.pricing_rule import PricingRuleCreate, PricingRuleUpdate, PricingRuleResponse
+from backend.worker.celery_app import celery_app  # MUST import to configure Celery broker
+from backend.worker.tasks.scraper import scrape_competitor_price
 
 router = APIRouter()
 
@@ -31,6 +34,17 @@ def create_pricing_rule(
         ).update({"rule_id": rule.id}, synchronize_session=False)
         db.commit()
         db.refresh(rule)
+        
+        # Trigger immediate scrape for assigned products
+        comp_prods = db.query(CompetitorProduct).join(Product).filter(
+            CompetitorProduct.product_id.in_(data.product_ids),
+            Product.is_active == True
+        ).all()
+        for cp in comp_prods:
+            try:
+                scrape_competitor_price.delay(str(cp.id))
+            except Exception as e:
+                print(f"Warning: Could not trigger celery task: {e}")
         
     rule.products_count = len(data.product_ids) if data.product_ids else 0
     rule.product_ids = data.product_ids or []
@@ -84,6 +98,18 @@ def update_pricing_rule(
         
     db.commit()
     db.refresh(rule)
+    
+    if data.product_ids is not None:
+        # Trigger immediate scrape for newly assigned products
+        comp_prods = db.query(CompetitorProduct).join(Product).filter(
+            CompetitorProduct.product_id.in_(data.product_ids),
+            Product.is_active == True
+        ).all()
+        for cp in comp_prods:
+            try:
+                scrape_competitor_price.delay(str(cp.id))
+            except Exception as e:
+                print(f"Warning: Could not trigger celery task: {e}")
     
     products = db.query(Product.id).filter(Product.rule_id == rule.id).all()
     product_ids = [p[0] for p in products]

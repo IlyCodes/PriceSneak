@@ -5,7 +5,12 @@ from backend.models.pricing_rule import PricingRule
 from backend.models.competitor_product import CompetitorProduct
 import decimal
 
-def evaluate_product_rules(db: Session, competitor_product_id: str, new_competitor_price: float):
+def evaluate_product_rules(db: Session, competitor_product_id: str, new_competitor_price: float, old_competitor_price: float | None = None):
+    # If this is the very first scrape, we just record the competitor price but don't apply rules yet
+    # because rules might depend on price fluctuations.
+    if old_competitor_price is None:
+        return
+
     # Retrieve the competitor product
     comp_prod = db.query(CompetitorProduct).filter(CompetitorProduct.id == competitor_product_id).first()
     if not comp_prod:
@@ -13,7 +18,7 @@ def evaluate_product_rules(db: Session, competitor_product_id: str, new_competit
 
     # Retrieve the main product
     product = db.query(Product).filter(Product.id == comp_prod.product_id).first()
-    if not product or not product.rule_id:
+    if not product or not product.rule_id or not product.is_active:
         return
 
     # Retrieve the rule

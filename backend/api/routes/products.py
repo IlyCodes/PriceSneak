@@ -23,6 +23,8 @@ from backend.models.user import User
 from backend.models.product import Product
 from backend.models.competitor_product import CompetitorProduct
 from backend.models.product_analysis import ProductAnalysis
+from backend.worker.celery_app import celery_app  # MUST import to configure Celery broker
+from backend.worker.tasks.scraper import scrape_competitor_price
 from backend.schemas.product import (
     ProductCreate,
     ProductUpdate,
@@ -223,6 +225,8 @@ async def update_product(
 
     update_data = product_in.model_dump(exclude_unset=True)
     old_price = product.my_current_price
+    old_rule_id = product.rule_id
+    old_is_active = product.is_active
 
     for field in update_data:
         setattr(product, field, update_data[field])
@@ -230,6 +234,20 @@ async def update_product(
     db.add(product)
     db.commit()
     db.refresh(product)
+    
+    # Trigger immediate scrape if a new rule is assigned OR product is reactivated
+    rule_changed = "rule_id" in update_data and product.rule_id and product.rule_id != old_rule_id
+    reactivated = "is_active" in update_data and product.is_active and not old_is_active
+
+    if product.is_active and (rule_changed or reactivated):
+        comp_prods = db.query(CompetitorProduct).filter(
+            CompetitorProduct.product_id == product.id
+        ).all()
+        for cp in comp_prods:
+            try:
+                scrape_competitor_price.delay(str(cp.id))
+            except Exception as e:
+                print(f"Warning: Could not trigger celery task: {e}")
 
     # Persist price fluctuations for historical charting
     if "my_current_price" in update_data and old_price != product.my_current_price:

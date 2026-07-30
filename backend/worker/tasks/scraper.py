@@ -109,6 +109,9 @@ def scrape_competitor_price(competitor_product_id: str):
 
         if new_price is not None:
             logger.info("Saving price to PostgreSQL and MongoDB...")
+            
+            old_competitor_price = float(comp_prod.current_price) if comp_prod.current_price is not None else None
+
             # 1. Update PostgreSQL
             comp_prod.current_price = new_price
             comp_prod.last_scraped_at = datetime.utcnow()
@@ -118,7 +121,7 @@ def scrape_competitor_price(competitor_product_id: str):
             async_insert_mongo_price(str(comp_prod.product_id), str(comp_prod.id), new_price)
 
             logger.info("Evaluating Pricing Rules...")
-            evaluate_product_rules(db, str(comp_prod.id), new_price)
+            evaluate_product_rules(db, str(comp_prod.id), new_price, old_competitor_price)
         else:
             logger.warning("Price extraction failed or returned None. Database not updated.")
 
