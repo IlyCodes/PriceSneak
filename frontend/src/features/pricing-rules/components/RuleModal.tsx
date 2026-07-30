@@ -4,7 +4,7 @@ import type { PricingRule, PricingRuleCreate } from '../api/rulesApi';
 import { createRule, updateRule } from '../api/rulesApi';
 import { getProducts } from '../../products/api/productsApi';
 import type { Product } from '../../products/api/productsApi';
-import { getGlobalCompetitors } from '../../products/api/competitorsApi';
+import { getGlobalCompetitors, fetchCompetitors } from '../../products/api/competitorsApi';
 import type { Competitor } from '../../products/api/competitorsApi';
 import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
@@ -28,13 +28,6 @@ export function RuleModal({ isOpen, onClose, rule, onSave }: RuleModalProps) {
   const [productSearch, setProductSearch] = useState('');
   const [confirmProduct, setConfirmProduct] = useState<Product | null>(null);
   
-  useEffect(() => {
-    if (isOpen) {
-      getProducts().then(res => setProducts(res.items)).catch(console.error);
-      getGlobalCompetitors().then(setCompetitors).catch(console.error);
-    }
-  }, [isOpen]);
-
   const [formData, setFormData] = useState<PricingRuleCreate>({
     name: '',
     is_enabled: true,
@@ -50,6 +43,30 @@ export function RuleModal({ isOpen, onClose, rule, onSave }: RuleModalProps) {
     competitor_id: undefined,
     product_ids: [],
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      // Fetch products (increase size if you have many products to ensure they appear in the list)
+      getProducts(1, 100).then(res => setProducts(res.items)).catch(console.error);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (formData.product_ids && formData.product_ids.length > 0) {
+      Promise.all(formData.product_ids.map(id => fetchCompetitors(id)))
+        .then(results => {
+           const allCompetitors = results.flat().map(cp => cp.competitor);
+           // unique by id
+           const unique = Array.from(new Map(allCompetitors.map(c => [c.id, c])).values());
+           setCompetitors(unique);
+        })
+        .catch(console.error);
+    } else {
+      getGlobalCompetitors().then(setCompetitors).catch(console.error);
+    }
+  }, [formData.product_ids, isOpen]);
 
   useEffect(() => {
     if (rule) {
@@ -116,7 +133,7 @@ export function RuleModal({ isOpen, onClose, rule, onSave }: RuleModalProps) {
     >
       {(isExpanded: boolean) => (
         <>
-          <form onSubmit={handleSubmit} className="flex flex-col h-[calc(100vh-100px)] -mx-4 -my-6 sm:-mx-6 bg-brand-bg text-brand-text-main">
+          <form onSubmit={handleSubmit} className="flex flex-col h-full bg-brand-bg text-brand-text-main">
             <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm border border-red-100">
@@ -341,15 +358,21 @@ export function RuleModal({ isOpen, onClose, rule, onSave }: RuleModalProps) {
 
               <div className="flex items-center gap-2">
                 <span className="text-sm text-brand-text-muted">{t('pricing_rules.targeting_the', 'Targeting the')}</span>
-                <select
-                  value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value as 'cheapest' | 'avg' | 'highest' })}
-                  className="p-2.5 rounded-lg border border-brand-border shadow-sm focus:border-brand-primary focus:ring-brand-primary outline-none transition-colors"
-                >
-                  <option value="cheapest">{t('pricing_rules.cheapest_price', 'Cheapest Price')}</option>
-                  <option value="avg">{t('pricing_rules.average_price', 'Average Price')}</option>
-                  <option value="highest">{t('pricing_rules.highest_price', 'Highest Price')}</option>
-                </select>
+                {formData.event_scope === 'competitor' ? (
+                  <span className="text-sm font-semibold text-brand-primary bg-brand-primary/5 px-3 py-2 rounded-lg border border-brand-primary/20">
+                    {t('pricing_rules.competitor_price_fixed')}
+                  </span>
+                ) : (
+                  <select
+                    value={formData.position}
+                    onChange={(e) => setFormData({ ...formData, position: e.target.value as 'cheapest' | 'avg' | 'highest' })}
+                    className="p-2.5 rounded-lg border border-brand-border shadow-sm focus:border-brand-primary focus:ring-brand-primary outline-none transition-colors"
+                  >
+                    <option value="cheapest">{t('pricing_rules.cheapest_price', 'Cheapest Price')}</option>
+                    <option value="avg">{t('pricing_rules.average_price', 'Average Price')}</option>
+                    <option value="highest">{t('pricing_rules.highest_price', 'Highest Price')}</option>
+                  </select>
+                )}
               </div>
             </div>
 
