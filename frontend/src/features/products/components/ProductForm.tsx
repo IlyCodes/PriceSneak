@@ -81,11 +81,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   return (
     <>
     <form onSubmit={handleSubmit} className="flex flex-col h-full bg-white">
-      <div className="p-6 border-b border-slate-100">
-        <h2 className="text-xl font-bold text-brand-text-main tracking-tight">
-          {isEditing ? t('products.form_edit_title') : t('products.form_add_title')}
-        </h2>
-      </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {error && (

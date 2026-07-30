@@ -129,7 +129,7 @@ export function SlideOver({ isOpen, onClose, title, children, isDirty = false, e
           >
             <div className="flex h-full flex-col bg-white shadow-xl">
               <div className="flex items-center justify-between px-4 py-6 sm:px-6 border-b border-slate-100">
-                <h2 className="text-lg font-semibold text-slate-900" id="slide-over-title">
+                <h2 className="text-xl font-bold text-brand-text-main" id="slide-over-title">
                   {title}
                 </h2>
                 <div className="ml-3 flex h-7 items-center gap-2">
@@ -152,7 +152,7 @@ export function SlideOver({ isOpen, onClose, title, children, isDirty = false, e
                   </button>
                 </div>
               </div>
-              <div className="relative flex-1 px-4 py-6 sm:px-6 overflow-y-auto">
+              <div className="relative flex-1 overflow-y-auto">
                 {typeof children === 'function' ? children(isExpanded) : children}
               </div>
             </div>
