@@ -17,6 +17,53 @@ import { ImportCompetitorsModal } from '../components/ImportCompetitorsModal';
 import { Button } from '../../../components/ui/Button';
 import { Switch } from '../../../components/ui/Switch';
 
+const timeAgo = (dateString?: string): string => {
+  if (!dateString) return 'Jamais';
+  const utcDateString = dateString.endsWith('Z') ? dateString : `${dateString}Z`;
+  const date = new Date(utcDateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (diffInSeconds < 0) return 'À l\'instant'; // safety fallback for slight timezone/clock skew
+  if (diffInSeconds < 60) return 'À l\'instant';
+  
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `Il y a ${diffInMinutes} min`;
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `Il y a ${diffInHours} h`;
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `Il y a ${diffInDays} j`;
+};
+
+const timeUntil = (dateString?: string, frequency?: string): string => {
+  if (!dateString) return 'En attente...';
+  
+  const utcDateString = dateString.endsWith('Z') ? dateString : `${dateString}Z`;
+  const lastDate = new Date(utcDateString);
+  
+  const nextDate = new Date(lastDate);
+  if (frequency === 'daily') nextDate.setDate(nextDate.getDate() + 1);
+  else if (frequency === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
+  else if (frequency === 'monthly') nextDate.setDate(nextDate.getDate() + 30);
+  else nextDate.setDate(nextDate.getDate() + 1); // default daily
+
+  const now = new Date();
+  const diffInSeconds = Math.floor((nextDate.getTime() - now.getTime()) / 1000);
+  
+  if (diffInSeconds <= 0) return 'Imminente';
+  
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `Dans ${diffInMinutes} min`;
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `Dans ${diffInHours} h`;
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `Dans ${diffInDays} j`;
+};
+
 export const ProductDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -487,9 +534,30 @@ export const ProductDetails = () => {
                   <Switch checked={product.is_active} onChange={handleToggleActive} />
                 </div>
               </div>
-              <div className="flex items-center sm:flex-col sm:items-end justify-between sm:justify-start w-full sm:w-auto">
-                <p className="text-xs text-slate-500 sm:order-last">{t('products.last_sync')}</p>
-                <div className="text-sm font-semibold text-slate-900">2 mins ago</div>
+              <div className="flex flex-col gap-2 w-full sm:w-auto sm:items-end">
+                <div className="flex items-center justify-between sm:justify-end gap-2 w-full">
+                  <p className="text-xs text-slate-500">{t('products.last_sync')}:</p>
+                  <div className="text-sm font-semibold text-slate-900">
+                    {(() => {
+                      const scrapedDates = competitors.map(c => c.last_scraped_at).filter(Boolean) as string[];
+                      const mostRecentScrape = scrapedDates.length > 0 ? scrapedDates.sort().reverse()[0] : undefined;
+                      return timeAgo(mostRecentScrape);
+                    })()}
+                  </div>
+                </div>
+                
+                {product.is_active && (
+                  <div className="flex items-center justify-between sm:justify-end gap-2 w-full">
+                    <p className="text-xs text-brand-primary/80">{t('products.next_sync')}:</p>
+                    <div className="text-sm font-semibold text-brand-primary">
+                      {(() => {
+                        const scrapedDates = competitors.map(c => c.last_scraped_at).filter(Boolean) as string[];
+                        const mostRecentScrape = scrapedDates.length > 0 ? scrapedDates.sort().reverse()[0] : undefined;
+                        return timeUntil(mostRecentScrape, productRule?.frequency);
+                      })()}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
