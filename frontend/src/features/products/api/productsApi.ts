@@ -11,6 +11,7 @@ export interface Product {
   is_active: boolean;
   rule_id?: string;
   created_at: string;
+  updated_at: string;
   analysis?: {
     cheapest_price: number | null;
     avg_price: number | null;
