@@ -248,7 +248,7 @@ async def get_competitor_price_history(
         history.append(
             {
                 "recorded_at": doc["recorded_at"],
-                "price": doc.get("competitor_price", 0.0),
+                "price": doc.get("price", doc.get("competitor_price", 0.0)),
             }
         )
 
