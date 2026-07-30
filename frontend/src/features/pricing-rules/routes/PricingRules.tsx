@@ -6,8 +6,9 @@ import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { Button } from '../../../components/ui/Button';
 import { Switch } from '../../../components/ui/Switch';
 import { ConfirmModal } from '../../../components/ui/ConfirmModal';
-import { Plus, Zap, Trash2 } from 'lucide-react';
+import { Plus, Zap, Trash2, Edit2, Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../auth/context/AuthContext';
 
 const formatTimeAgo = (dateStr: string) => {
   const date = new Date(dateStr);
@@ -19,6 +20,133 @@ const formatTimeAgo = (dateStr: string) => {
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
   return `${Math.floor(diffInSeconds / 86400)} days ago`;
 };
+
+function PricingRuleCard({ 
+  rule, 
+  onToggle, 
+  onEdit, 
+  onDelete, 
+  onQuickUpdate 
+}: { 
+  rule: PricingRule; 
+  onToggle: (rule: PricingRule) => void; 
+  onEdit: (rule: PricingRule) => void; 
+  onDelete: (rule: PricingRule) => void; 
+  onQuickUpdate: (rule: PricingRule, val: number) => Promise<void>; 
+}) {
+  const { t } = useTranslation();
+  const { currencySymbol } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(rule.value || 0);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    await onQuickUpdate(rule, editValue);
+    setIsSaving(false);
+    setIsEditing(false);
+  };
+
+  const renderTargetInfo = () => {
+    if (rule.is_equal) {
+       return <span className="text-base font-medium text-brand-text-main">{t('pricing_rules.exact_match', 'Exact Match')}</span>;
+    }
+    
+    return (
+      <div className="flex items-center gap-2">
+         {isEditing ? (
+            <div className="flex items-center gap-1">
+              <input 
+                type="number" 
+                value={editValue}
+                onChange={e => setEditValue(parseFloat(e.target.value))}
+                className="w-16 px-1.5 py-0.5 text-sm border border-brand-primary rounded"
+                autoFocus
+                onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+              />
+              <span className="text-brand-text-muted text-sm">{rule.value_type === 'percentage' ? '%' : currencySymbol}</span>
+              <button onClick={handleSave} disabled={isSaving} className="text-green-600 hover:text-green-700 p-1 bg-green-50 rounded"><Check className="w-4 h-4" /></button>
+              <button onClick={() => { setIsEditing(false); setEditValue(rule.value || 0); }} className="text-red-500 hover:text-red-600 p-1 bg-red-50 rounded"><X className="w-4 h-4" /></button>
+            </div>
+         ) : (
+            <div className="flex items-center gap-1 group cursor-pointer" onClick={() => setIsEditing(true)}>
+              <span className="text-base font-bold text-brand-primary border-b border-dashed border-brand-primary/50 group-hover:border-brand-primary transition-colors" title="Cliquer pour modifier rapidement">
+                {rule.comparison_operator === 'lower_than' ? '- ' : '+ '}{rule.value} {rule.value_type === 'percentage' ? '%' : currencySymbol}
+              </span>
+              <Edit2 className="w-3.5 h-3.5 text-brand-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+         )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="bg-brand-surface rounded-xl border border-brand-border p-6 hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-brand-primary">
+            <Zap className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-brand-text-main">{rule.name}</h3>
+            <span
+              className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full ${
+                rule.is_enabled
+                  ? 'text-brand-success bg-emerald-50'
+                  : 'text-brand-text-muted bg-gray-100'
+              }`}
+            >
+              {rule.is_enabled ? t('pricing_rules.active', 'Active') : t('pricing_rules.paused', 'Paused')}
+            </span>
+          </div>
+        </div>
+        <div title={rule.is_enabled ? t('pricing_rules.active', 'Active') : t('pricing_rules.paused', 'Paused')}>
+          <Switch checked={rule.is_enabled} onChange={() => onToggle(rule)} />
+        </div>
+      </div>
+
+      <div className="space-y-3 mt-6">
+        <div className="flex justify-between items-center py-2 border-b border-brand-border">
+          <span className="text-base text-brand-text-muted">{t('pricing_rules.the_action', 'The Action')}</span>
+          {renderTargetInfo()}
+        </div>
+        <div className="flex justify-between items-center py-2 border-b border-brand-border">
+          <span className="text-base text-brand-text-muted">{t('pricing_rules.products_affected', 'Products Affected')}</span>
+          <span className="text-base font-medium text-brand-text-main">{rule.products_count} {t('pricing_rules.products', 'Products')}</span>
+        </div>
+        <div className="flex justify-between items-center py-2 border-b border-brand-border">
+          <span className="text-base text-brand-text-muted">{t('pricing_rules.auto_update', 'Auto Update')}</span>
+          <span className="text-base font-medium text-brand-text-main">
+            {rule.auto_update_price ? t('pricing_rules.yes', 'Yes') : t('pricing_rules.no_alerts', 'No (Alerts Only)')}
+          </span>
+        </div>
+        <div className="flex justify-between items-center py-2">
+          <span className="text-base text-brand-text-muted">{t('pricing_rules.last_execution', 'Last Execution')}</span>
+          <span className="text-base text-brand-text-main">
+            {rule.last_executed_at
+              ? formatTimeAgo(rule.last_executed_at)
+              : t('pricing_rules.never', 'Never')}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-6 flex gap-2">
+        <button
+          onClick={() => onEdit(rule)}
+          className="flex-1 text-sm font-medium text-brand-text-muted hover:text-brand-primary transition-colors py-2 rounded-lg border border-brand-border hover:bg-slate-50"
+        >
+          {t('pricing_rules.edit_rule', 'Edit Rule')}
+        </button>
+        <button
+          onClick={() => onDelete(rule)}
+          className="w-10 h-10 flex items-center justify-center text-brand-text-muted hover:text-brand-danger transition-colors rounded-lg border border-brand-border hover:bg-red-50"
+        >
+          <Trash2 className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function PricingRules() {
   const { t } = useTranslation();
@@ -64,6 +192,15 @@ export function PricingRules() {
     }
   };
 
+  const handleQuickUpdate = async (rule: PricingRule, val: number) => {
+    try {
+      const updated = await updateRule(rule.id, { value: val });
+      setRules(rules.map((r) => (r.id === rule.id ? { ...r, value: updated.value } : r)));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const openNewModal = () => {
     setEditingRule(undefined);
     setIsModalOpen(true);
@@ -106,69 +243,14 @@ export function PricingRules() {
       {/* Responsive grid to ensure cards display optimally across all device widths */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {rules.map((rule) => (
-          <div
-            key={rule.id}
-            className="bg-brand-surface rounded-xl border border-brand-border p-6 hover:shadow-md transition-shadow"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-brand-primary">
-                  <Zap className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-brand-text-main">{rule.name}</h3>
-                  <span
-                    className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full ${
-                      rule.is_enabled
-                        ? 'text-brand-success bg-emerald-50'
-                        : 'text-brand-text-muted bg-gray-100'
-                    }`}
-                  >
-                    {rule.is_enabled ? t('pricing_rules.active', 'Active') : t('pricing_rules.paused', 'Paused')}
-                  </span>
-                </div>
-              </div>
-              <div title={rule.is_enabled ? t('pricing_rules.active', 'Active') : t('pricing_rules.paused', 'Paused')}>
-                <Switch checked={rule.is_enabled} onChange={() => handleToggle(rule)} />
-              </div>
-            </div>
-
-            <div className="space-y-3 mt-6">
-              <div className="flex justify-between items-center py-2 border-b border-brand-border">
-                <span className="text-base text-brand-text-muted">{t('pricing_rules.products_affected', 'Products Affected')}</span>
-                <span className="text-base font-medium text-brand-text-main">{rule.products_count} {t('pricing_rules.products', 'Products')}</span>
-              </div>
-              <div className="flex justify-between items-center py-2 border-b border-brand-border">
-                <span className="text-base text-brand-text-muted">{t('pricing_rules.auto_update', 'Auto Update')}</span>
-                <span className="text-base font-medium text-brand-text-main">
-                  {rule.auto_update_price ? t('pricing_rules.yes', 'Yes') : t('pricing_rules.no_alerts', 'No (Alerts Only)')}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-base text-brand-text-muted">{t('pricing_rules.last_execution', 'Last Execution')}</span>
-                <span className="text-base text-brand-text-main">
-                  {rule.last_executed_at
-                    ? formatTimeAgo(rule.last_executed_at)
-                    : t('pricing_rules.never', 'Never')}
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6 flex gap-2">
-              <button
-                onClick={() => openEditModal(rule)}
-                className="flex-1 text-sm font-medium text-brand-text-muted hover:text-brand-primary transition-colors py-2 rounded-lg border border-brand-border hover:bg-slate-50"
-              >
-                {t('pricing_rules.edit_rule', 'Edit Rule')}
-              </button>
-              <button
-                onClick={() => setRuleToDelete(rule)}
-                className="w-10 h-10 flex items-center justify-center text-brand-text-muted hover:text-brand-danger transition-colors rounded-lg border border-brand-border hover:bg-red-50"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
+          <PricingRuleCard 
+            key={rule.id} 
+            rule={rule} 
+            onToggle={handleToggle} 
+            onEdit={openEditModal} 
+            onDelete={setRuleToDelete} 
+            onQuickUpdate={handleQuickUpdate} 
+          />
         ))}
         {rules.length === 0 && (
           <div className="col-span-full py-12 text-center text-brand-text-muted bg-brand-surface rounded-xl border border-brand-border">
