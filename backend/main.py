@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.routes import auth, products, competitors, pricing_rules, global_competitors
+from backend.api.routes import auth, products, competitors, pricing_rules, global_competitors, dashboard, alerts
 from backend.core.mongodb import connect_to_mongo, close_mongo_connection
 
 
@@ -36,6 +36,8 @@ app.include_router(products.router, prefix="/api/products", tags=["Products"])
 app.include_router(competitors.router, prefix="/api/products", tags=["Competitors"])
 app.include_router(pricing_rules.router, prefix="/api/pricing-rules", tags=["Pricing Rules"])
 app.include_router(global_competitors.router, prefix="/api/competitors", tags=["Global Competitors"])
+app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
+app.include_router(alerts.router, prefix="/api/alerts", tags=["Alerts"])
 
 
 @app.get("/")

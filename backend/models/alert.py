@@ -23,6 +23,7 @@ class Alert(Base, TimestampMixin):
         ForeignKey("competitor_products.id", ondelete="CASCADE"),
         nullable=False,
     )
+    alert_type = Column(String(50), nullable=True)
     message = Column(String(500), nullable=False)
     is_read = Column(Boolean, default=False, nullable=False)
 
