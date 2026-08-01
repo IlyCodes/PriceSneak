@@ -1,4 +1,11 @@
 {
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "products": "My Products",
+    "rules": "Pricing Rules",
+    "settings": "Settings",
+    "logout": "Log out"
+  },
   "profile": {
     "title": "Account Settings",
     "description": "Manage your personal information, preferences, and account security.",
@@ -93,6 +100,7 @@
     "yesterday": "Yesterday",
     "older": "Older",
     "mark_read": "Mark as read",
+    "mark_all_read": "Mark all as read",
     "delete_all_confirm_title": "Clear all alerts?",
     "delete_all_confirm_desc": "This action cannot be undone. Are you sure you want to permanently delete all your alert history?",
     "delete_confirm_title": "Delete alert?",
@@ -176,7 +184,25 @@
     "discard_changes": "Discard changes",
     "discard_confirm": "You have unsaved changes. Are you sure you want to close without saving?",
     "discard": "Discard without saving",
+    "addModal": {
+      "success": "Product created successfully."
+    },
     "details": {
+      "edit": {
+        "success": "Product updated successfully."
+      },
+      "delete": {
+        "success": "Product deleted successfully."
+      },
+      "matchPrice": {
+        "success": "Price matched successfully."
+      },
+      "status": {
+        "activated": "Product activated successfully.",
+        "deactivated": "Product deactivated successfully.",
+        "inactive": "Inactive",
+        "no_rule_error": "Cannot activate product: no pricing rule assigned. Please assign a rule first."
+      },
       "competitors": {
         "addModal": {
           "title": "Add Competitor Product",
@@ -186,8 +212,17 @@
             "required": "URL is required",
             "invalidUrl": "Please enter a valid URL (http://...)"
           }
+        },
+        "edit": {
+          "success": "Link updated successfully."
         }
       }
+    },
+    "empty_competitors": {
+      "title": "Track your competitors",
+      "desc": "A product without competitors is like sailing blind. Add competitors to monitor their prices and adjust yours automatically.",
+      "cta": "Add my first competitor",
+      "import": "Import a list"
     }
   },
   "integrations": {
@@ -202,6 +237,7 @@
   "pricing_rules": {
     "title": "Pricing Rules",
     "desc": "Manage active automation rules and strategies.",
+    "no_competitors": "No competitors",
     "new_rule": "New Rule",
     "active": "Active",
     "paused": "Paused",
@@ -255,6 +291,14 @@
     "reassign_product_message": "The product is already assigned to another rule. Do you want to reassign it to this new rule?",
     "yes_reassign": "Yes, reassign",
     "delete_title": "Delete Pricing Rule",
-    "delete_message": "Are you sure you want to delete the rule \"{{name}}\"? This action cannot be undone."
+    "delete_message": "Are you sure you want to delete the rule \"{{name}}\"? This action cannot be undone.",
+    "toast": {
+      "enabled": "Rule enabled.",
+      "disabled": "Rule disabled.",
+      "deleted": "Rule deleted.",
+      "updated": "Rule updated successfully.",
+      "edit_success": "Rule updated successfully.",
+      "add_success": "Rule created successfully."
+    }
   }
 }

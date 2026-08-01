@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Package, Calculator, Settings as SettingsIcon, LogOut, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { useAuth } from '../../features/auth/context/AuthContext';
 import { cn } from '../../lib/utils';
+import { useTranslation } from 'react-i18next';
 
 export interface SidebarProps {
   isMobileMenuOpen?: boolean;
@@ -24,15 +25,16 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
   };
   const { pathname } = useLocation();
   const { logout, user } = useAuth();
+  const { t } = useTranslation();
 
   const mainNavItems = [
-    { icon: LayoutDashboard, path: '/dashboard', label: 'Dashboard' },
-    { icon: Package, path: '/products', label: 'My Products' }, 
-    { icon: Calculator, path: '/rules', label: 'Pricing Rules' },
+    { icon: LayoutDashboard, path: '/dashboard', label: t('sidebar.dashboard', 'Dashboard') },
+    { icon: Package, path: '/products', label: t('sidebar.products', 'My Products') }, 
+    { icon: Calculator, path: '/rules', label: t('sidebar.rules', 'Pricing Rules') },
   ];
 
   const bottomNavItems = [
-    { icon: SettingsIcon, path: '/settings', label: 'Settings' },
+    { icon: SettingsIcon, path: '/settings', label: t('sidebar.settings', 'Settings') },
   ];
 
   return (
@@ -116,14 +118,14 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
 
         <button 
           onClick={logout}
-          title={!isExpanded ? 'Logout' : undefined}
+          title={!isExpanded ? t('sidebar.logout', 'Logout') : undefined}
           className={cn(
             "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium text-sm text-brand-danger hover:bg-red-50 mt-2",
             !isExpanded && "justify-center"
           )}
         >
           <LogOut className="w-5 h-5 shrink-0" />
-          {isExpanded && <span className="truncate">Logout</span>}
+          {isExpanded && <span className="truncate">{t('sidebar.logout', 'Logout')}</span>}
         </button>
         </div>
       </aside>

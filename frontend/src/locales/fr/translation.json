@@ -1,4 +1,11 @@
 {
+  "sidebar": {
+    "dashboard": "Tableau de Bord",
+    "products": "Mes Produits",
+    "rules": "Règles Tarifaires",
+    "settings": "Paramètres",
+    "logout": "Déconnexion"
+  },
   "profile": {
     "title": "Paramètres du compte",
     "description": "Gérez vos informations personnelles, vos préférences et la sécurité de votre compte.",
@@ -93,6 +100,7 @@
     "yesterday": "Hier",
     "older": "Plus anciens",
     "mark_read": "Marquer comme lu",
+    "mark_all_read": "Tout marquer comme lu",
     "delete_all_confirm_title": "Supprimer toutes les alertes ?",
     "delete_all_confirm_desc": "Cette action est irréversible. Êtes-vous sûr de vouloir supprimer définitivement tout votre historique d'alertes ?",
     "delete_confirm_title": "Supprimer l'alerte ?",
@@ -175,8 +183,25 @@
     "proceed": "Oui, continuer",
     "discard_changes": "Ignorer les modifications",
     "discard_confirm": "Vos modifications ne sont pas enregistrées. Êtes-vous sûr de vouloir fermer ?",
-    "discard": "Fermer sans sauvegarder",
+    "addModal": {
+      "success": "Produit créé avec succès."
+    },
     "details": {
+      "edit": {
+        "success": "Produit mis à jour avec succès."
+      },
+      "delete": {
+        "success": "Produit supprimé avec succès."
+      },
+      "matchPrice": {
+        "success": "Prix ajusté avec succès."
+      },
+      "status": {
+        "activated": "Produit activé avec succès.",
+        "deactivated": "Produit désactivé avec succès.",
+        "inactive": "Inactif",
+        "no_rule_error": "Impossible d'activer le produit : aucune règle de prix n'est assignée. Veuillez définir une règle d'abord."
+      },
       "competitors": {
         "addModal": {
           "title": "Ajouter un produit concurrent",
@@ -186,8 +211,17 @@
             "required": "L'URL est requise",
             "invalidUrl": "Veuillez entrer une URL valide (http://...)"
           }
+        },
+        "edit": {
+          "success": "Lien mis à jour avec succès."
         }
       }
+    },
+    "empty_competitors": {
+      "title": "Suivez vos concurrents",
+      "desc": "Un produit sans concurrents, c'est comme naviguer à l'aveugle. Ajoutez vos concurrents pour surveiller leurs prix et ajuster automatiquement les vôtres.",
+      "cta": "Ajouter mon premier concurrent",
+      "import": "Importer une liste"
     }
   },
   "integrations": {
@@ -202,6 +236,7 @@
   "pricing_rules": {
     "title": "Règles Tarifaires",
     "desc": "Gérez vos stratégies d'automatisation actives.",
+    "no_competitors": "Aucun concurrent",
     "new_rule": "Nouvelle Règle",
     "active": "Activée",
     "paused": "Désactivée",
@@ -255,6 +290,14 @@
     "reassign_product_message": "Le produit est déjà assigné à une autre règle. Voulez-vous vraiment le réassigner ?",
     "yes_reassign": "Oui, réassigner",
     "delete_title": "Supprimer la règle",
-    "delete_message": "Êtes-vous sûr de vouloir supprimer la règle \"{{name}}\" ? Cette action est irréversible."
+    "delete_message": "Êtes-vous sûr de vouloir supprimer la règle \"{{name}}\" ? Cette action est irréversible.",
+    "toast": {
+      "enabled": "Règle activée.",
+      "disabled": "Règle désactivée.",
+      "deleted": "Règle supprimée.",
+      "updated": "Règle mise à jour avec succès.",
+      "edit_success": "Règle mise à jour avec succès.",
+      "add_success": "Règle créée avec succès."
+    }
   }
 }
