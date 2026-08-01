@@ -52,7 +52,10 @@ def get_products(
     skip = (page - 1) * size
     query = (
         db.query(Product)
-        .options(joinedload(Product.analysis))
+        .options(
+            joinedload(Product.analysis),
+            joinedload(Product.competitor_products)
+        )
         .filter(Product.user_id == current_user.id)
     )
 
@@ -235,19 +238,9 @@ async def update_product(
     db.commit()
     db.refresh(product)
     
-    # Trigger immediate scrape if a new rule is assigned OR product is reactivated
-    rule_changed = "rule_id" in update_data and product.rule_id and product.rule_id != old_rule_id
-    reactivated = "is_active" in update_data and product.is_active and not old_is_active
-
-    if product.is_active and (rule_changed or reactivated):
-        comp_prods = db.query(CompetitorProduct).filter(
-            CompetitorProduct.product_id == product.id
-        ).all()
-        for cp in comp_prods:
-            try:
-                scrape_competitor_price.delay(str(cp.id))
-            except Exception as e:
-                print(f"Warning: Could not trigger celery task: {e}")
+    # Note: We rely on the global Celery beat task (check_schedules_and_trigger_scrapes) 
+    # to handle the periodic scraping based on rule frequency.
+    # No immediate scheduling is done here to avoid duplicate tasks.
 
     # Persist price fluctuations for historical charting
     if "my_current_price" in update_data and old_price != product.my_current_price:
@@ -264,7 +257,7 @@ async def update_product(
                         "competitor_product_id": "self",
                         "product_id": str(product.id),
                     },
-                    "competitor_price": float(product.my_current_price),
+                    "price": float(product.my_current_price),
                     "is_in_stock": True,
                 }
             )
@@ -326,7 +319,7 @@ async def get_product_price_history(
                     if hasattr(doc["recorded_at"], "isoformat")
                     else doc["recorded_at"]
                 ),
-                "price": doc.get("competitor_price", 0.0),
+                "price": doc.get("price", doc.get("competitor_price", 0.0)),
             }
         )
 

@@ -17,6 +17,7 @@ from backend.schemas.competitor import (
     PriceHistoryResponse,
 )
 from backend.core.mongodb import get_mongo_db
+from backend.worker.tasks.scraper import scrape_competitor_price
 
 router = APIRouter()
 
@@ -93,6 +94,9 @@ async def add_competitor_product(
 
     # Avoid N+1 queries when returning competitor details
     db.refresh(competitor_product, ["competitor"])
+
+    # Launch a background scraping task immediately so the user gets initial data quickly
+    scrape_competitor_price.delay(str(competitor_product.id))
 
     return competitor_product
 

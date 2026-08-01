@@ -15,15 +15,49 @@ from backend.models.competitor_product import CompetitorProduct
 from backend.services.rule_engine import evaluate_product_rules
 import json
 
+def parse_price_string(text: str) -> float | None:
+    """Extract float from raw string, handling localization."""
+    if not text: return None
+    text = re.sub(r'[^\d.,]', '', text)
+    if ',' in text and '.' in text:
+        text = text.replace(',', '')
+    elif ',' in text:
+        if re.search(r',\d{2}$', text):
+            text = text.replace(',', '.')
+        else:
+            text = text.replace(',', '')
+    try:
+        val = float(text)
+        return val if val > 0 else None
+    except ValueError:
+        return None
+
 def extract_price_from_html(html_content: str) -> float | None:
-    """Heuristic function to find a price in the HTML using JSON-LD or Regex."""
+    """Extract price using selectors, structured data, or regex."""
     soup = BeautifulSoup(html_content, "html.parser")
     
-    # 1. Try to find JSON-LD schema (Standard for E-commerce SEO)
+    # Bypass DOM variations with hardcoded rules
+    amazon_price = soup.find("span", class_="a-price")
+    if amazon_price:
+        offscreen = amazon_price.find("span", class_="a-offscreen")
+        if offscreen:
+            val = parse_price_string(offscreen.get_text(strip=True))
+            if val: return val
+
+    ebay_price = soup.find(class_=re.compile(r'x-price-primary|prc-IeVDqc', re.IGNORECASE))
+    if ebay_price:
+        val = parse_price_string(ebay_price.get_text(strip=True))
+        if val: return val
+
+    walmart_price = soup.find(itemprop="price")
+    if walmart_price and walmart_price.has_attr("content"):
+        val = parse_price_string(walmart_price["content"])
+        if val: return val
+
+    # Search standard JSON-LD
     for script in soup.find_all("script", type="application/ld+json"):
         try:
             data = json.loads(script.string)
-            # Sometimes it's a list of schemas
             if isinstance(data, list):
                 for item in data:
                     if item.get("@type") == "Product" and "offers" in item:
@@ -42,26 +76,18 @@ def extract_price_from_html(html_content: str) -> float | None:
         except Exception:
             pass
 
-    # 2. Fallback heuristic: look for typical price classes
+    # Regex fallback on likely price containers
     price_elements = soup.find_all(class_=re.compile(r'price|amount|valeur', re.IGNORECASE))
     for el in price_elements:
         text = el.get_text(strip=True)
-        # Match a price pattern like 19.99, 19,99, $19.99, 19.99€
-        match = re.search(r'(\d+[.,]\d{2})', text)
-        if match:
-            # Normalize comma to dot
-            price_str = match.group(1).replace(',', '.')
-            try:
-                val = float(price_str)
-                if val > 0:  # Skip 0.00 prices (like 'Save $0.00')
-                    return val
-            except ValueError:
-                continue
+        val = parse_price_string(text)
+        if val:
+            return val
 
     return None
 
 def async_insert_mongo_price(product_id: str, comp_prod_id: str, price: float):
-    """Helper to run the async mongodb insertion synchronously within celery"""
+    """Bridge async mongo driver to sync Celery task."""
     async def _insert():
         await connect_to_mongo()
         db = get_mongo_db()
@@ -124,6 +150,8 @@ def scrape_competitor_price(competitor_product_id: str):
             evaluate_product_rules(db, str(comp_prod.id), new_price, old_competitor_price)
         else:
             logger.warning("Price extraction failed or returned None. Database not updated.")
+
+
 
     finally:
         db.close()

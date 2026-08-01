@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { X, Link as LinkIcon, Edit2 } from 'lucide-react';
 import { type CompetitorProduct } from '../api/competitorsApi';
+import { useToast } from '../../../hooks/useToast';
 
 interface AddCompetitorModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface AddCompetitorModalProps {
 
 export function AddCompetitorModal({ isOpen, onClose, onSubmit, initialData }: AddCompetitorModalProps) {
   const { t } = useTranslation();
+  const toast = useToast();
   const [url, setUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -48,8 +50,11 @@ export function AddCompetitorModal({ isOpen, onClose, onSubmit, initialData }: A
       await onSubmit(url);
       setUrl('');
       onClose();
+      toast.success(t('products.details.competitors.addModal.success', 'Concurrent ajouté avec succès !'));
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Une erreur est survenue.");
+      const msg = err.message || t('products.details.competitors.addModal.errors.default', 'Une erreur est survenue.');
+      toast.error(msg);
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }
