@@ -10,6 +10,7 @@ export interface Product {
   cost_price: number;
   is_active: boolean;
   rule_id?: string;
+  competitors_count: number;
   created_at: string;
   updated_at: string;
   analysis?: {

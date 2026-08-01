@@ -9,6 +9,7 @@ import { ConfirmModal } from '../../../components/ui/ConfirmModal';
 import { Plus, Zap, Trash2, Edit2, Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../auth/context/AuthContext';
+import { useToast } from '../../../hooks/useToast';
 
 const formatTimeAgo = (dateStr: string) => {
   const date = new Date(dateStr);
@@ -150,6 +151,7 @@ function PricingRuleCard({
 
 export function PricingRules() {
   const { t } = useTranslation();
+  const toast = useToast();
   const [rules, setRules] = useState<PricingRule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -175,8 +177,10 @@ export function PricingRules() {
     try {
       const updated = await updateRule(rule.id, { is_enabled: !rule.is_enabled });
       setRules(rules.map((r) => (r.id === rule.id ? { ...r, is_enabled: updated.is_enabled } : r)));
-    } catch (error) {
+      toast.success(updated.is_enabled ? t('pricing_rules.toast.enabled', 'Règle activée.') : t('pricing_rules.toast.disabled', 'Règle désactivée.'));
+    } catch (error: any) {
       console.error(error);
+      toast.error(error.message || t('errors.default', 'Une erreur est survenue.'));
     }
   };
 
@@ -185,8 +189,10 @@ export function PricingRules() {
     try {
       await deleteRule(ruleToDelete.id);
       setRules(rules.filter((r) => r.id !== ruleToDelete.id));
-    } catch (error) {
+      toast.success(t('pricing_rules.toast.deleted', 'Règle supprimée.'));
+    } catch (error: any) {
       console.error(error);
+      toast.error(error.message || t('errors.default', 'Une erreur est survenue.'));
     } finally {
       setRuleToDelete(null);
     }
@@ -196,8 +202,10 @@ export function PricingRules() {
     try {
       const updated = await updateRule(rule.id, { value: val });
       setRules(rules.map((r) => (r.id === rule.id ? { ...r, value: updated.value } : r)));
-    } catch (error) {
+      toast.success(t('pricing_rules.toast.updated', 'Règle mise à jour avec succès.'));
+    } catch (error: any) {
       console.error(error);
+      toast.error(error.message || t('errors.default', 'Une erreur est survenue.'));
     }
   };
 

@@ -11,6 +11,7 @@ import { Button } from '../../../components/ui/Button';
 import { ConfirmModal } from '../../../components/ui/ConfirmModal';
 import { X, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useToast } from '../../../hooks/useToast';
 
 interface RuleModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ interface RuleModalProps {
 
 export function RuleModal({ isOpen, onClose, rule, onSave }: RuleModalProps) {
   const { t } = useTranslation();
+  const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -113,12 +115,16 @@ export function RuleModal({ isOpen, onClose, rule, onSave }: RuleModalProps) {
     try {
       if (rule) {
         await updateRule(rule.id, formData);
+        toast.success(t('pricing_rules.toast.edit_success', 'Règle mise à jour avec succès.'));
       } else {
         await createRule(formData);
+        toast.success(t('pricing_rules.toast.add_success', 'Règle créée avec succès.'));
       }
       onSave();
     } catch (err: any) {
-      setError(err.message || t('pricing_rules.save_error', 'An error occurred while saving the rule.'));
+      const msg = err.message || t('pricing_rules.save_error', 'An error occurred while saving the rule.');
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -196,7 +202,8 @@ export function RuleModal({ isOpen, onClose, rule, onSave }: RuleModalProps) {
                     <button 
                       key={p.id} 
                       type="button"
-                      className="w-full text-left flex flex-col p-2.5 hover:bg-slate-50 transition-colors cursor-pointer border-b border-brand-border last:border-0"
+                      disabled={p.competitors_count === 0}
+                      className={`w-full text-left flex flex-col p-2.5 transition-colors border-b border-brand-border last:border-0 ${p.competitors_count === 0 ? 'cursor-not-allowed opacity-60 bg-gray-50' : 'hover:bg-slate-50 cursor-pointer'}`}
                       onClick={() => {
                         const isReassigning = p.rule_id && (!rule || p.rule_id !== rule.id);
                         if (isReassigning) {
@@ -210,10 +217,13 @@ export function RuleModal({ isOpen, onClose, rule, onSave }: RuleModalProps) {
                         setProductSearch('');
                       }}
                     >
-                      <span className="text-sm font-medium text-brand-text-main flex items-center gap-2">
+                      <span className="text-sm font-medium text-brand-text-main flex items-center flex-wrap gap-2">
                         {p.name}
                         {p.rule_id && (!rule || p.rule_id !== rule.id) && (
                           <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">{t('pricing_rules.assigned_elsewhere', 'Assigned elsewhere')}</span>
+                        )}
+                        {p.competitors_count === 0 && (
+                          <span className="text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded border border-red-100">{t('pricing_rules.no_competitors', 'No competitors')}</span>
                         )}
                       </span>
                       <span className="text-xs text-brand-text-muted">{t('products.sku', 'SKU')}: {p.sku}</span>

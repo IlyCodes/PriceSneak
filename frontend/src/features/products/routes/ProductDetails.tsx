@@ -1,11 +1,12 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { getProduct, deleteProduct, updateProduct, getProductHistory, getProductAnalysis, type Product } from '../api/productsApi';
 import { getRules, type PricingRule } from '../../pricing-rules/api/rulesApi';
 import { fetchCompetitors, addCompetitor, updateCompetitor, deleteCompetitor, fetchCompetitorHistory, type CompetitorProduct, type PriceHistoryPoint } from '../api/competitorsApi';
-import { Settings, ChevronDown, Download, Edit2, Trash2, ArrowLeft, Plus, FileSpreadsheet, Search } from 'lucide-react';
+import { Settings, ChevronDown, Download, Edit2, Trash2, ArrowLeft, Plus, FileSpreadsheet, Search, MoreVertical, Link as LinkIcon, ArrowUpRight, ArrowDownRight, Archive, Activity, DollarSign, UploadCloud, RefreshCw, BarChart2 } from 'lucide-react';
+import { useToast } from '../../../hooks/useToast';
 import { read, utils, writeFile } from 'xlsx';
 import { useAuth } from '../../auth/context/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -69,6 +70,8 @@ export const ProductDetails = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { currencySymbol } = useAuth();
+  const toast = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -121,6 +124,16 @@ export const ProductDetails = () => {
   }, [id]);
 
   useEffect(() => {
+    if (searchParams.get('action') === 'add_competitor') {
+      setIsAddCompetitorModalOpen(true);
+      setSearchParams(prev => {
+        prev.delete('action');
+        return prev;
+      }, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
     if (competitors.length > 0 && selectedCompetitorIds.size === 0) {
       setSelectedCompetitorIds(new Set(competitors.slice(0, 3).map(c => c.id)));
     }
@@ -167,27 +180,45 @@ export const ProductDetails = () => {
 
   const handleToggleActive = async (newStatus: boolean) => {
     if (!product) return;
+    
+    if (newStatus && !product.rule_id) {
+      toast.error(t('products.details.status.no_rule_error', "Impossible d'activer le produit : aucune règle de prix n'est assignée. Veuillez définir une règle d'abord."));
+      return;
+    }
+
     try {
       const updated = await updateProduct(product.id, { is_active: newStatus });
       setProduct(updated);
-    } catch (err) {
+      toast.success(newStatus ? t('products.details.status.activated', 'Produit activé avec succès') : t('products.details.status.deactivated', 'Produit désactivé avec succès'));
+    } catch (err: any) {
       console.error('Failed to toggle product status:', err);
+      toast.error(err.message || t('errors.default', 'Une erreur est survenue.'));
     }
   };
 
   const confirmDelete = async () => {
     if (id) {
-      await deleteProduct(id);
-      navigate('/products');
+      try {
+        await deleteProduct(id);
+        toast.success(t('products.details.delete.success', 'Produit supprimé avec succès.'));
+        navigate('/products');
+      } catch (err: any) {
+        toast.error(err.message || t('errors.default', 'Une erreur est survenue.'));
+      }
     }
   };
 
   const handleUpdate = async (data: any) => {
     if (id) {
-      await updateProduct(id, data);
-      setIsEditSlideOverOpen(false);
-      setIsFormDirty(false);
-      fetchProduct();
+      try {
+        await updateProduct(id, data);
+        setIsEditSlideOverOpen(false);
+        setIsFormDirty(false);
+        fetchProduct();
+        toast.success(t('products.details.edit.success', 'Produit mis à jour avec succès.'));
+      } catch (err: any) {
+        toast.error(err.message || t('errors.default', 'Une erreur est survenue.'));
+      }
     }
   };
 
@@ -196,29 +227,42 @@ export const ProductDetails = () => {
     try {
       const result = await updateProduct(id, { ...product, my_current_price: price } as Product);
       setProduct(result);
-    } catch (e) {
+      toast.success(t('products.details.matchPrice.success', 'Prix ajusté avec succès.'));
+    } catch (e: any) {
       console.error(e);
+      toast.error(e.message || t('errors.default', 'Une erreur est survenue.'));
     }
   };
 
   const handleAddCompetitor = async (url: string) => {
     if (id) {
-      if (editingCompetitor) {
-        await updateCompetitor(id, editingCompetitor.id, url);
-      } else {
-        await addCompetitor(id, url);
+      try {
+        if (editingCompetitor) {
+          await updateCompetitor(id, editingCompetitor.id, url);
+        } else {
+          await addCompetitor(id, url);
+        }
+        const competitorsData = await fetchCompetitors(id);
+        setCompetitors(competitorsData);
+        setEditingCompetitor(undefined);
+        // Toast is handled in AddCompetitorModal, but if we edit, we should toast.
+        if (editingCompetitor) toast.success(t('products.details.competitors.edit.success', 'Lien mis à jour avec succès.'));
+      } catch (e: any) {
+        throw e; // Throw it so AddCompetitorModal can catch it and show toast
       }
-      const competitorsData = await fetchCompetitors(id);
-      setCompetitors(competitorsData);
-      setEditingCompetitor(undefined);
     }
   };
 
   const handleDeleteCompetitor = async (competitorId: string) => {
     if (id) {
-      await deleteCompetitor(id, competitorId);
-      const competitorsData = await fetchCompetitors(id);
-      setCompetitors(competitorsData);
+      try {
+        await deleteCompetitor(id, competitorId);
+        const competitorsData = await fetchCompetitors(id);
+        setCompetitors(competitorsData);
+        toast.success(t('products.details.competitors.delete.success', 'Concurrent supprimé avec succès.'));
+      } catch (err: any) {
+        toast.error(err.message || t('errors.default', 'Une erreur est survenue.'));
+      }
     }
   };
 
@@ -824,14 +868,34 @@ export const ProductDetails = () => {
               </div>
             </>
           ) : (
-            <div className="p-16 flex flex-col items-center justify-center text-center">
-              <div className="mb-6">
-                {renderAddCompetitorDropdown(isAddMenuEmptyOpen, setIsAddMenuEmptyOpen)}
+            <div className="py-20 px-6 flex flex-col items-center justify-center text-center bg-slate-50/50 rounded-b-xl border-t border-slate-100">
+              <div className="w-20 h-20 bg-brand-primary/10 rounded-full flex items-center justify-center mb-6 relative">
+                <div className="absolute inset-0 bg-brand-primary/20 rounded-full animate-ping opacity-75"></div>
+                <Search className="w-10 h-10 text-brand-primary relative z-10" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2">Aucun concurrent défini</h3>
-              <p className="text-slate-500 max-w-sm leading-relaxed">
-                Gardez un œil sur le marché en ajoutant votre premier concurrent pour suivre automatiquement ses changements de prix.
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">
+                {t('products.empty_competitors.title', 'Suivez vos concurrents')}
+              </h3>
+              <p className="text-slate-500 max-w-md mx-auto leading-relaxed mb-8">
+                {t('products.empty_competitors.desc', 'Un produit sans concurrents, c\'est comme naviguer à l\'aveugle. Ajoutez vos concurrents pour surveiller leurs prix et ajuster automatiquement les vôtres.')}
               </p>
+              <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
+                <Button 
+                  onClick={() => setIsAddCompetitorModalOpen(true)}
+                  className="px-8 py-3 text-base shadow-lg shadow-brand-primary/20 hover:shadow-xl hover:shadow-brand-primary/30 transition-all hover:-translate-y-0.5"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  {t('products.empty_competitors.cta', 'Ajouter mon premier concurrent')}
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="px-6 py-3 text-base"
+                >
+                  <FileSpreadsheet className="w-5 h-5 mr-2 text-slate-400" />
+                  {t('products.empty_competitors.import', 'Importer une liste')}
+                </Button>
+              </div>
             </div>
           )}
         </div>

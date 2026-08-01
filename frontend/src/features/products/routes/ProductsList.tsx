@@ -7,6 +7,7 @@ import { SlideOver } from '../../../components/ui/SlideOver';
 import { ProductForm } from '../components/ProductForm';
 import { getProducts, getProduct, createProduct, updateProduct, importProducts, exportProducts, type Product, type PaginatedProducts } from '../api/productsApi';
 import { Plus, Edit2, Search, ChevronLeft, ChevronRight, Upload, Download, FileType, FileSpreadsheet } from 'lucide-react';
+import { useToast } from '../../../hooks/useToast';
 import { ImportProductsModal } from '../components/ImportProductsModal';
 import { useAuth } from '../../auth/context/AuthContext';
 
@@ -14,6 +15,7 @@ export const ProductsList = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const toast = useToast();
   const [productsData, setProductsData] = useState<PaginatedProducts | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
@@ -111,13 +113,20 @@ export const ProductsList = () => {
   };
 
   const handleFormSubmit = async (data: any) => {
-    if (action === 'edit' && editId) {
-      await updateProduct(editId, data);
-    } else {
-      await createProduct(data);
+    try {
+      if (action === 'edit' && editId) {
+        await updateProduct(editId, data);
+        toast.success(t('products.details.edit.success', 'Produit mis à jour avec succès.'));
+        closeSlideOver();
+        fetchProducts(currentPage, searchParams.get('search') || undefined);
+      } else {
+        const newProduct = await createProduct(data);
+        toast.success(t('products.addModal.success', 'Produit créé avec succès.'));
+        navigate(`/products/${newProduct.id}?action=add_competitor`);
+      }
+    } catch (err: any) {
+      toast.error(err.message || t('errors.default', 'Une erreur est survenue.'));
     }
-    closeSlideOver();
-    fetchProducts(currentPage, searchParams.get('search') || undefined); // Fetch new data to reflect recent import
   };
 
 
@@ -125,10 +134,10 @@ export const ProductsList = () => {
   const handleImportSubmit = async (file: File) => {
     try {
       const result = await importProducts(file);
-      alert(`Import successful: ${result.imported} created, ${result.updated} updated.`);
+      toast.success(t('products.import.success_detailed', 'Import réussi : {{created}} créés, {{updated}} mis à jour.', { created: result.imported, updated: result.updated }));
       fetchProducts(currentPage, searchParams.get('search') || undefined);
     } catch (error: any) {
-      alert(`Error importing file: ${error.message}`);
+      toast.error(t('products.import.error', 'Erreur lors de l\'import : {{message}}', { message: error.message }));
       throw error;
     }
   };
@@ -137,9 +146,10 @@ export const ProductsList = () => {
     try {
       setIsExporting(true);
       await exportProducts(type, searchQuery || undefined);
-    } catch (error) {
+      toast.success(t('products.export.success', 'Exportation réussie.'));
+    } catch (error: any) {
       console.error("Failed to export products:", error);
-      alert("Erreur lors de l'exportation des produits.");
+      toast.error(error.message || t('errors.default', 'Une erreur est survenue.'));
     } finally {
       setIsExporting(false);
     }
@@ -279,10 +289,17 @@ export const ProductsList = () => {
                 </tr>
               ) : (
                 productsData?.items.map(product => (
-                  <tr key={product.id} className="hover:bg-slate-50 transition-colors group">
+                  <tr key={product.id} className={`transition-colors group ${product.is_active ? 'hover:bg-slate-50' : 'bg-slate-100/70 hover:bg-slate-200/70 opacity-80'}`}>
                     <td className="px-6 py-4">
                       <div>
-                        <div className="font-medium text-slate-900">{product.name}</div>
+                        <div className="font-medium text-slate-900">
+                          {product.name}
+                          {!product.is_active && (
+                            <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200 text-slate-600">
+                              {t('products.details.status.inactive', 'Inactif')}
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-slate-500 font-mono mt-0.5">{product.sku}</div>
                       </div>
                     </td>
@@ -332,10 +349,17 @@ export const ProductsList = () => {
             </div>
           ) : (
             productsData?.items.map(product => (
-              <div key={product.id} className="p-4 hover:bg-slate-50 transition-colors flex flex-col">
+              <div key={product.id} className={`p-4 transition-colors flex flex-col ${product.is_active ? 'hover:bg-slate-50' : 'bg-slate-100/70 hover:bg-slate-200/70 opacity-80'}`}>
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex-1 pr-4">
-                    <div className="font-bold text-slate-900 leading-tight">{product.name}</div>
+                    <div className="font-bold text-slate-900 leading-tight">
+                      {product.name}
+                      {!product.is_active && (
+                        <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200 text-slate-600">
+                          {t('products.details.status.inactive', 'Inactif')}
+                        </span>
+                      )}
+                    </div>
                     <div className="text-xs text-slate-500 font-mono mt-1">{product.sku}</div>
                   </div>
                   <div className="text-right shrink-0">

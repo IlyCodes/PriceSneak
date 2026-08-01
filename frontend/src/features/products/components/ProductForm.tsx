@@ -27,7 +27,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
     category: initialData?.category || '',
     my_current_price: initialData?.my_current_price || undefined,
     cost_price: initialData?.cost_price || 0,
-    is_active: initialData?.is_active ?? true,
+    is_active: initialData?.is_active ?? false,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,7 +43,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         formData.category !== (initialData?.category || '') ||
         formData.my_current_price !== (initialData?.my_current_price || undefined) ||
         formData.cost_price !== (initialData?.cost_price || 0) ||
-        formData.is_active !== (initialData?.is_active ?? true);
+        formData.cost_price !== (initialData?.cost_price || 0) ||
+        formData.is_active !== (initialData?.is_active ?? false);
       
       onDirtyChange(isDirty);
     }
@@ -59,6 +60,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (formData.is_active && !initialData?.rule_id) {
+      setError(t('products.details.status.no_rule_error', "Impossible d'activer le produit : aucune règle de prix n'est assignée. Veuillez d'abord lui assigner une règle depuis la page des règles."));
+      return;
+    }
+
     if (formData.my_current_price !== undefined && formData.my_current_price < formData.cost_price) {
       setIsConfirmModalOpen(true);
       return;
@@ -149,17 +156,25 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         </div>
 
         <div className="pt-2">
-          <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
+          <label className={`flex items-center gap-3 p-3 rounded-lg border border-slate-200 transition-colors ${!initialData?.rule_id ? 'opacity-60 cursor-not-allowed bg-slate-50' : 'cursor-pointer hover:bg-slate-50'}`}>
             <input
               type="checkbox"
               name="is_active"
               checked={formData.is_active}
               onChange={handleChange}
-              className="w-5 h-5 text-brand-primary rounded border-slate-300 focus:ring-brand-primary"
+              disabled={!initialData?.rule_id}
+              className="w-5 h-5 text-brand-primary rounded border-slate-300 focus:ring-brand-primary disabled:opacity-50 disabled:cursor-not-allowed"
             />
-            <span className="text-sm font-medium text-slate-700">
-              {t('products.is_active')}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-slate-700">
+                {t('products.is_active')}
+              </span>
+              {!initialData?.rule_id && (
+                <span className="text-xs text-slate-500 mt-0.5">
+                  {t('products.no_rule_hint', 'Nécessite une règle de prix pour être activé')}
+                </span>
+              )}
+            </div>
           </label>
         </div>
       </div>

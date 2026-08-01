@@ -42,3 +42,7 @@ class Product(Base, TimestampMixin):
         back_populates="product",
         cascade="all, delete-orphan",
     )
+
+    @property
+    def competitors_count(self) -> int:
+        return len(self.competitor_products) if self.competitor_products else 0
