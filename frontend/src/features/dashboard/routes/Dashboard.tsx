@@ -6,7 +6,7 @@ import { Button } from '../../../components/ui/Button';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { Link } from 'react-router-dom';
 import type { DashboardStats, Alert } from '../api/dashboardApi';
-import { getDashboardStats, markAlertAsRead } from '../api/dashboardApi';
+import { getDashboardStats, markAlertAsRead, markAllAlertsAsRead } from '../api/dashboardApi';
 import { AlertsModal } from '../components/AlertsModal';
 import { useAuth } from '../../auth/context/AuthContext';
 import { CheckCircle2 } from 'lucide-react';
@@ -133,14 +133,35 @@ export const Dashboard = () => {
             <div className="text-sm font-medium text-brand-text-muted uppercase tracking-wider">
               {t('dashboard.recent_alerts', 'Recent Alerts')}
             </div>
-            {stats && stats.recent_alerts.length > 0 && (
-              <button 
-                onClick={() => setIsAlertsModalOpen(true)}
-                className="text-xs font-medium text-brand-primary hover:text-brand-primary/80 underline underline-offset-2"
-              >
-                {t('dashboard.show_all', 'Show all')}
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {stats && stats.recent_alerts.length > 0 && stats.recent_alerts.some(a => !a.is_read) && (
+                <button 
+                  onClick={async () => {
+                    try {
+                      await markAllAlertsAsRead();
+                      setStats({
+                        ...stats,
+                        recent_alerts: stats.recent_alerts.map(a => ({ ...a, is_read: true }))
+                      });
+                    } catch(err) {
+                      console.error(err);
+                    }
+                  }}
+                  className="text-xs font-medium text-brand-primary hover:text-brand-primary/80 transition-colors"
+                  title={t('dashboard.mark_all_read', 'Mark all as read')}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                </button>
+              )}
+              {stats && stats.recent_alerts.length > 0 && (
+                <button 
+                  onClick={() => setIsAlertsModalOpen(true)}
+                  className="text-xs font-medium text-brand-primary hover:text-brand-primary/80 underline underline-offset-2"
+                >
+                  {t('dashboard.show_all', 'Show all')}
+                </button>
+              )}
+            </div>
           </div>
           
           <div className="flex-1">

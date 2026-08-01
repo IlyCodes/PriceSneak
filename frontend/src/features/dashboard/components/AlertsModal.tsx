@@ -4,8 +4,7 @@ import { Trash2, CheckCircle2 } from 'lucide-react';
 import { SlideOver } from '../../../components/ui/SlideOver';
 import { Button } from '../../../components/ui/Button';
 import type { Alert } from '../api/dashboardApi';
-import { getAlerts, markAlertAsRead, deleteAlert, deleteAllAlerts } from '../api/dashboardApi';
-import { ConfirmModal } from '../../../components/ui/ConfirmModal';
+import { getAlerts, markAlertAsRead, markAllAlertsAsRead } from '../api/dashboardApi';
 import { useAuth } from '../../auth/context/AuthContext';
 import clsx from 'clsx';
 
@@ -26,7 +25,6 @@ export const AlertsModal = ({ isOpen, onClose }: AlertsModalProps) => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [sort, setSort] = useState<'newest' | 'oldest'>('newest');
   const [isLoading, setIsLoading] = useState(false);
-  const [deleteContext, setDeleteContext] = useState<{ type: 'single' | 'all', id?: string } | null>(null);
 
   const fetchAlerts = async () => {
     setIsLoading(true);
@@ -56,27 +54,10 @@ export const AlertsModal = ({ isOpen, onClose }: AlertsModalProps) => {
     }
   };
 
-  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDeleteContext({ type: 'single', id });
-  };
-
-  const handleConfirmDelete = async () => {
-    if (deleteContext?.type !== 'single' || !deleteContext.id) return;
+  const handleMarkAllAsRead = async () => {
     try {
-      await deleteAlert(deleteContext.id);
-      setAlerts(alerts.filter(a => a.id !== deleteContext.id));
-      setDeleteContext(null);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleDeleteAll = async () => {
-    try {
-      await deleteAllAlerts();
-      setAlerts([]);
-      setDeleteContext(null);
+      await markAllAlertsAsRead();
+      setAlerts(alerts.map(a => ({ ...a, is_read: true })));
     } catch (err) {
       console.error(err);
     }
@@ -149,7 +130,7 @@ export const AlertsModal = ({ isOpen, onClose }: AlertsModalProps) => {
                     <CheckCircle2 className="w-4 h-4 text-gray-300" />
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 pr-2">
                   <p className="text-sm font-medium text-brand-text-main mb-1">
                     {alert.product_name}
                   </p>
@@ -159,11 +140,6 @@ export const AlertsModal = ({ isOpen, onClose }: AlertsModalProps) => {
                   <div className="text-[10px] text-gray-400 mt-2 font-medium">
                     {new Date(alert.created_at).toLocaleString()}
                   </div>
-                </div>
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-                  <button onClick={(e) => handleDeleteClick(alert.id, e)} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
             </div>
@@ -192,9 +168,14 @@ export const AlertsModal = ({ isOpen, onClose }: AlertsModalProps) => {
               <option value="oldest">{t('dashboard.sort_oldest', 'Oldest')}</option>
             </select>
             {alerts.length > 0 && (
-              <Button variant="outline" onClick={() => setDeleteContext({ type: 'all' })} className="text-red-600 border-red-200 hover:text-red-700 hover:bg-red-50 text-sm h-8 px-3">
-                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                {t('dashboard.delete_all', 'Delete All')}
+              <Button 
+                variant="outline" 
+                onClick={handleMarkAllAsRead} 
+                disabled={!alerts.some(a => !a.is_read)}
+                className="text-brand-primary border-brand-primary/20 hover:text-brand-primary hover:bg-brand-primary/5 text-sm h-8 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                {t('dashboard.mark_all_read', 'Mark all as read')}
               </Button>
             )}
           </div>
@@ -214,37 +195,24 @@ export const AlertsModal = ({ isOpen, onClose }: AlertsModalProps) => {
               </div>
             ) : (
               <>
-                {renderAlertGroup(t('dashboard.today', 'Today'), groupedAlerts.today)}
-                {renderAlertGroup(t('dashboard.yesterday', 'Yesterday'), groupedAlerts.yesterday)}
-                {renderAlertGroup(t('dashboard.older', 'Older'), groupedAlerts.older)}
+                {sort === 'newest' ? (
+                  <>
+                    {renderAlertGroup(t('dashboard.today', 'Today'), groupedAlerts.today)}
+                    {renderAlertGroup(t('dashboard.yesterday', 'Yesterday'), groupedAlerts.yesterday)}
+                    {renderAlertGroup(t('dashboard.older', 'Older'), groupedAlerts.older)}
+                  </>
+                ) : (
+                  <>
+                    {renderAlertGroup(t('dashboard.older', 'Older'), groupedAlerts.older)}
+                    {renderAlertGroup(t('dashboard.yesterday', 'Yesterday'), groupedAlerts.yesterday)}
+                    {renderAlertGroup(t('dashboard.today', 'Today'), groupedAlerts.today)}
+                  </>
+                )}
               </>
             )}
           </div>
         </div>
       </SlideOver>
-
-      <ConfirmModal
-        isOpen={deleteContext !== null}
-        onCancel={() => setDeleteContext(null)}
-        onConfirm={
-          deleteContext?.type === 'all' 
-            ? handleDeleteAll 
-            : handleConfirmDelete
-        }
-        title={
-          deleteContext?.type === 'all' 
-            ? t('dashboard.delete_all_confirm_title', 'Clear all alerts?') 
-            : t('dashboard.delete_confirm_title', 'Delete alert?')
-        }
-        message={
-          deleteContext?.type === 'all' 
-            ? t('dashboard.delete_all_confirm_desc', 'This action cannot be undone. Are you sure you want to permanently delete all your alert history?') 
-            : t('dashboard.delete_confirm_desc', 'Are you sure you want to delete this alert?')
-        }
-        confirmText={t('common.delete', 'Delete')}
-        cancelText={t('common.cancel', 'Cancel')}
-        variant="danger"
-      />
     </>
   );
 };

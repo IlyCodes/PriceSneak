@@ -38,10 +38,6 @@ export const markAlertAsRead = async (id: string): Promise<void> => {
   await apiFetch(`/api/alerts/${id}/read`, { method: 'PUT' });
 };
 
-export const deleteAlert = async (id: string): Promise<void> => {
-  await apiFetch(`/api/alerts/${id}`, { method: 'DELETE' });
-};
-
-export const deleteAllAlerts = async (): Promise<void> => {
-  await apiFetch('/api/alerts', { method: 'DELETE' });
+export const markAllAlertsAsRead = async (): Promise<void> => {
+  await apiFetch('/api/alerts/read-all', { method: 'PUT' });
 };

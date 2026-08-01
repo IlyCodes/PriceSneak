@@ -40,30 +40,15 @@ async def list_alerts(
         
     return formatted_alerts
 
-@router.delete("/{alert_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_alert(
-    alert_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+@router.put("/read-all", status_code=status.HTTP_200_OK)
+async def mark_all_alerts_read(
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
-    alert = db.query(Alert).filter(
-        Alert.id == alert_id,
-        Alert.user_id == current_user.id
-    ).first()
-    
-    if not alert:
-        raise HTTPException(status_code=404, detail="Alert not found")
-        
-    db.delete(alert)
+    db.query(Alert).filter(Alert.user_id == current_user.id).update(
+        {"is_read": True}, synchronize_session=False
+    )
     db.commit()
-
-@router.delete("", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_all_alerts(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    db.query(Alert).filter(Alert.user_id == current_user.id).delete()
-    db.commit()
+    return {"message": "All alerts marked as read"}
 
 @router.put("/{alert_id}/read", status_code=status.HTTP_200_OK)
 async def mark_alert_read(
