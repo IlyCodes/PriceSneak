@@ -134,6 +134,16 @@ export const ProductDetails = () => {
   }, [searchParams, setSearchParams]);
 
   useEffect(() => {
+    const isScraping = competitors.some(c => !c.last_scraped_at);
+    if (isScraping && id) {
+      const interval = setInterval(() => {
+        fetchCompetitors(id).then(setCompetitors).catch(console.error);
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [competitors, id]);
+
+  useEffect(() => {
     if (competitors.length > 0 && selectedCompetitorIds.size === 0) {
       setSelectedCompetitorIds(new Set(competitors.slice(0, 3).map(c => c.id)));
     }
@@ -771,7 +781,16 @@ export const ProductDetails = () => {
                             </div>
                           </td>
                           <td className="p-4 text-slate-900 font-medium">
-                            {comp.current_price ? `${currencySymbol}${comp.current_price.toFixed(2)}` : 'N/A'}
+                            {!comp.last_scraped_at ? (
+                              <div className="flex items-center gap-2 text-brand-primary">
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                                <span className="text-xs">{t('products.scraping_in_progress', 'Extraction...')}</span>
+                              </div>
+                            ) : comp.current_price ? (
+                              `${currencySymbol}${comp.current_price.toFixed(2)}`
+                            ) : (
+                              'N/A'
+                            )}
                           </td>
                           <td className="p-4">
                             {priceDiff !== null ? (
@@ -783,7 +802,11 @@ export const ProductDetails = () => {
                             )}
                           </td>
                           <td className="p-4 text-xs text-slate-500">
-                            {comp.last_scraped_at ? new Date(comp.last_scraped_at).toLocaleDateString() : 'N/A'}
+                            {!comp.last_scraped_at ? (
+                              <span className="text-brand-primary/80 italic">{t('products.scraping_ongoing', 'En cours')}</span>
+                            ) : (
+                              new Date(comp.last_scraped_at).toLocaleDateString()
+                            )}
                           </td>
                           <td className="p-4 pr-6 text-right flex items-center justify-end gap-2">
                             <Button 
@@ -831,14 +854,27 @@ export const ProductDetails = () => {
                       <div className="text-right shrink-0">
                         <div className="text-xs text-slate-500 mb-1">{t('products.comp_table_price')}</div>
                         <div className="font-bold text-slate-900">
-                          {comp.current_price ? `${currencySymbol}${comp.current_price.toFixed(2)}` : 'N/A'}
+                          {!comp.last_scraped_at ? (
+                            <div className="flex items-center gap-1 text-brand-primary text-sm">
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                              <span className="text-xs">{t('products.scraping_in_progress', 'Extraction...')}</span>
+                            </div>
+                          ) : comp.current_price ? (
+                            `${currencySymbol}${comp.current_price.toFixed(2)}`
+                          ) : (
+                            'N/A'
+                          )}
                         </div>
                       </div>
                     </div>
                     <div className="flex justify-between items-center mt-2">
                       <span className="text-xs text-slate-500 flex items-center gap-1">
                         <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                        {comp.last_scraped_at ? new Date(comp.last_scraped_at).toLocaleDateString() : 'N/A'}
+                        {!comp.last_scraped_at ? (
+                          <span className="text-brand-primary/80 italic">{t('products.scraping_ongoing', 'En cours...')}</span>
+                        ) : (
+                          new Date(comp.last_scraped_at).toLocaleDateString()
+                        )}
                       </span>
                       <div className="flex items-center gap-2">
                         <Button 
