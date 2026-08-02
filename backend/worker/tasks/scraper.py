@@ -114,24 +114,60 @@ def scrape_competitor_price(competitor_product_id: str):
 
         proxy_config = {"server": settings.PROXY_URL} if settings.PROXY_URL else None
         
-        # Scrape with Playwright
+        # Why: Categorize domains to route requests directly to the most efficient scraper tier.
+        TIER_2_DOMAINS = ["amazon"]
+        TIER_3_DOMAINS = [
+            "ebay", "walmart", "target", "costco", "aliexpress",
+            "bestbuy", "homedepot", "wayfair", "gamestop",
+            "nike", "adidas", "footlocker", "zalando", "sephora", "asos",
+            "cdiscount", "fnac", "darty", "bol"
+        ]
+        
+        url_lower = comp_prod.product_url.lower()
+        is_tier_2 = any(d in url_lower for d in TIER_2_DOMAINS)
+        is_tier_3 = any(d in url_lower for d in TIER_3_DOMAINS)
+        
         new_price = None
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True, proxy=proxy_config)
-            context = browser.new_context(
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            )
-            page = context.new_page()
-            
+
+        # --- TIER 1: Standard Playwright ---
+        # Why: Fast, resource-light scraping for standard non-protected websites.
+        if is_tier_2 or is_tier_3:
+            logger.info(f"High-security domain detected. Skipping Tier 1.")
+        else:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True, proxy=proxy_config)
+                context = browser.new_context(
+                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                )
+                page = context.new_page()
+                try:
+                    page.goto(comp_prod.product_url, wait_until="domcontentloaded", timeout=30000)
+                    new_price = extract_price_from_html(page.content())
+                    if new_price is not None:
+                        logger.info(f"Tier 1 Extracted Price: {new_price}")
+                except Exception as e:
+                    logger.error(f"Tier 1 Error: {e}")
+                finally:
+                    browser.close()
+
+        # --- TIER 2: TLS Impersonation ---
+        if new_price is None and not is_tier_3:
+            logger.info("Triggering Tier 2 (TLS Impersonation)...")
+            from backend.worker.tasks.fallback_scraper import fetch_price_with_tls_impersonation
+            new_price = fetch_price_with_tls_impersonation(comp_prod.product_url)
+            if new_price is not None:
+                logger.info(f"Tier 2 Extracted Price: {new_price}")
+                
+        # --- TIER 3: Advanced Stealth ---
+        if new_price is None and is_tier_3:
+            logger.info("Triggering Tier 3 (Advanced Stealth)...")
             try:
-                page.goto(comp_prod.product_url, wait_until="domcontentloaded", timeout=30000)
-                html_content = page.content()
-                new_price = extract_price_from_html(html_content)
-                logger.info(f"Extracted Price: {new_price}")
+                from backend.worker.tasks.stealth_scraper import execute_advanced_stealth_scrape
+                new_price = execute_advanced_stealth_scrape(comp_prod.product_url)
+                if new_price is not None:
+                    logger.info(f"Tier 3 Extracted Price: {new_price}")
             except Exception as e:
-                logger.error(f"Error scraping {comp_prod.product_url}: {e}")
-            finally:
-                browser.close()
+                logger.error(f"Failed to execute Tier 3: {e}")
 
         if new_price is not None:
             logger.info("Saving price to PostgreSQL and MongoDB...")
@@ -150,6 +186,9 @@ def scrape_competitor_price(competitor_product_id: str):
             evaluate_product_rules(db, str(comp_prod.id), new_price, old_competitor_price)
         else:
             logger.warning("Price extraction failed or returned None. Database not updated.")
+            # Still update last_scraped_at so frontend knows the scrape attempt finished
+            comp_prod.last_scraped_at = datetime.utcnow()
+            db.commit()
 
 
 
