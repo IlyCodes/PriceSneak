@@ -15,11 +15,11 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     POSTGRES_PORT: int
 
-    MONGO_SERVER: str = "localhost"
-    MONGO_USER: str = "mongo_admin"
-    MONGO_PASSWORD: str = "mongo_password"
-    MONGO_DB: str = "pricesneak_db"
-    MONGO_PORT: int = 27017
+    MONGO_SERVER: str
+    MONGO_USER: str
+    MONGO_PASSWORD: str
+    MONGO_DB: str
+    MONGO_PORT: int
 
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
