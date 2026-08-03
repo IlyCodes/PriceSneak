@@ -235,7 +235,11 @@
   },
   "pricing_rules": {
     "title": "Règles Tarifaires",
-    "desc": "Gérez vos stratégies d'automatisation actives.",
+    "desc": {
+      "equal": "Prix égal à {{target}}",
+      "higher": "Prix {{val}} plus élevé que {{target}}",
+      "lower": "Prix {{val}} plus bas que {{target}}"
+    },
     "no_competitors": "Aucun concurrent",
     "new_rule": "Nouvelle Règle",
     "active": "Activée",
@@ -298,6 +302,13 @@
       "updated": "Règle mise à jour avec succès.",
       "edit_success": "Règle mise à jour avec succès.",
       "add_success": "Règle créée avec succès."
+    },
+    "rule_description": "Description",
+    "target": {
+      "avg": "la moyenne",
+      "competitor": "le concurrent ciblé",
+      "cheapest": "le moins cher",
+      "highest": "le plus cher"
     }
   }
 }

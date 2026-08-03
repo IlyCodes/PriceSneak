@@ -48,7 +48,7 @@ export function RuleModal({ isOpen, onClose, rule, onSave }: RuleModalProps) {
 
   useEffect(() => {
     if (isOpen) {
-      // Fetch products (increase size if you have many products to ensure they appear in the list)
+      // Why: Preload max products for offline autocomplete selection
       getProducts(1, 100).then(res => setProducts(res.items)).catch(console.error);
     }
   }, [isOpen]);
@@ -60,7 +60,7 @@ export function RuleModal({ isOpen, onClose, rule, onSave }: RuleModalProps) {
       Promise.all(formData.product_ids.map(id => fetchCompetitors(id)))
         .then(results => {
            const allCompetitors = results.flat().map(cp => cp.competitor);
-           // unique by id
+           // Why: Prevent duplicate competitor dropdown entries from shared URLs
            const unique = Array.from(new Map(allCompetitors.map(c => [c.id, c])).values());
            setCompetitors(unique);
         })

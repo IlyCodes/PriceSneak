@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { getProduct, deleteProduct, updateProduct, getProductHistory, getProductAnalysis, type Product } from '../api/productsApi';
 import { getRules, type PricingRule } from '../../pricing-rules/api/rulesApi';
+import { generateRuleDescription, generateRuleTrigger } from '../../pricing-rules/utils/ruleUtils';
 import { fetchCompetitors, addCompetitor, updateCompetitor, deleteCompetitor, fetchCompetitorHistory, type CompetitorProduct, type PriceHistoryPoint } from '../api/competitorsApi';
 import { Settings, ChevronDown, Download, Edit2, Trash2, ArrowLeft, Plus, FileSpreadsheet, Search, MoreVertical, Link as LinkIcon, ArrowUpRight, ArrowDownRight, Archive, Activity, DollarSign, UploadCloud, RefreshCw, BarChart2 } from 'lucide-react';
 import { useToast } from '../../../hooks/useToast';
@@ -25,7 +26,7 @@ const timeAgo = (dateString?: string): string => {
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
   
-  if (diffInSeconds < 0) return 'À l\'instant'; // safety fallback for slight timezone/clock skew
+  if (diffInSeconds < 0) return 'À l\'instant'; // Why: Handle edge cases where local clock is behind server clock
   if (diffInSeconds < 60) return 'À l\'instant';
   
   const diffInMinutes = Math.floor(diffInSeconds / 60);
@@ -48,7 +49,7 @@ const timeUntil = (dateString?: string, frequency?: string): string => {
   if (frequency === 'daily') nextDate.setDate(nextDate.getDate() + 1);
   else if (frequency === 'weekly') nextDate.setDate(nextDate.getDate() + 7);
   else if (frequency === 'monthly') nextDate.setDate(nextDate.getDate() + 30);
-  else nextDate.setDate(nextDate.getDate() + 1); // default daily
+  else nextDate.setDate(nextDate.getDate() + 1); // Why: Fallback to daily schedule if no frequency is defined
 
   const now = new Date();
   const diffInSeconds = Math.floor((nextDate.getTime() - now.getTime()) / 1000);
@@ -255,10 +256,10 @@ export const ProductDetails = () => {
         const competitorsData = await fetchCompetitors(id);
         setCompetitors(competitorsData);
         setEditingCompetitor(undefined);
-        // Toast is handled in AddCompetitorModal, but if we edit, we should toast.
+        // Why: Edit action bypasses modal's internal toast, requiring manual trigger here
         if (editingCompetitor) toast.success(t('products.details.competitors.edit.success', 'Lien mis à jour avec succès.'));
       } catch (e: any) {
-        throw e; // Throw it so AddCompetitorModal can catch it and show toast
+        throw e; // Why: Propagate error to modal for localized error handling
       }
     }
   };
@@ -573,12 +574,21 @@ export const ProductDetails = () => {
             <div className="flex flex-col sm:items-end pt-4 sm:pt-0 mt-2 sm:mt-0 border-t sm:border-t-0 border-slate-100">
               <div className="flex items-center justify-between sm:justify-end gap-3 mb-3 w-full sm:w-auto">
                 {product.rule_id && productRule ? (
-                  <button 
-                    onClick={() => navigate('/rules')}
-                    className={`text-sm font-semibold hover:underline ${product.is_active ? 'text-brand-primary' : 'text-slate-400'}`}
-                  >
-                    Règle: {productRule.name}
-                  </button>
+                  <div className="relative group/rule z-20">
+                    <button 
+                      onClick={() => navigate('/rules')}
+                      className={`text-sm font-semibold hover:underline ${product.is_active ? 'text-brand-primary' : 'text-slate-400'}`}
+                    >
+                      Règle: {productRule.name}
+                    </button>
+                    <div className="absolute top-full mt-2 right-0 md:right-auto md:left-1/2 md:-translate-x-1/2 w-72 bg-slate-900 text-white text-xs rounded-lg p-4 shadow-xl opacity-0 invisible group-hover/rule:opacity-100 group-hover/rule:visible transition-all duration-200 pointer-events-none text-left">
+                      <div className="font-semibold text-sm mb-1">{t('pricing_rules.the_action')}</div>
+                      <div className="text-slate-300 mb-3">{generateRuleDescription(productRule, currencySymbol, t)}</div>
+                      <div className="font-semibold text-sm mb-1">{t('pricing_rules.the_trigger')}</div>
+                      <div className="text-slate-300">{generateRuleTrigger(productRule, t)}</div>
+                      <div className="absolute -top-1 right-6 md:left-1/2 md:-translate-x-1/2 w-2 h-2 bg-slate-900 transform rotate-45"></div>
+                    </div>
+                  </div>
                 ) : (
                   <span className={`text-sm sm:text-xs font-semibold ${product.is_active ? 'text-emerald-600' : 'text-slate-500'}`}>
                     {product.is_active ? t('products.rule_active', 'Règle Activée') : t('products.rule_inactive', 'Règle Désactivée')}

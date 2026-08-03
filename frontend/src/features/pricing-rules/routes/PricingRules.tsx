@@ -10,6 +10,7 @@ import { Plus, Zap, Trash2, Edit2, Check, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../auth/context/AuthContext';
 import { useToast } from '../../../hooks/useToast';
+import { generateRuleDescription, generateRuleTrigger } from '../utils/ruleUtils';
 
 const formatTimeAgo = (dateStr: string) => {
   const date = new Date(dateStr);
@@ -108,25 +109,29 @@ function PricingRuleCard({
 
       <div className="space-y-3 mt-6">
         <div className="flex justify-between items-center py-2 border-b border-brand-border">
-          <span className="text-base text-brand-text-muted">{t('pricing_rules.the_action', 'The Action')}</span>
+          <span className="text-base text-brand-text-muted">{t('pricing_rules.the_action')}</span>
           {renderTargetInfo()}
         </div>
         <div className="flex justify-between items-center py-2 border-b border-brand-border">
-          <span className="text-base text-brand-text-muted">{t('pricing_rules.products_affected', 'Products Affected')}</span>
-          <span className="text-base font-medium text-brand-text-main">{rule.products_count} {t('pricing_rules.products', 'Products')}</span>
+          <span className="text-base text-brand-text-muted">{t('pricing_rules.rule_description')}</span>
+          <span className="text-base text-brand-text-main text-right ml-4">
+            {generateRuleDescription(rule, currencySymbol, t)}
+          </span>
+        </div>
+        <div className="flex justify-between items-center py-2 border-b border-brand-border">
+          <span className="text-base text-brand-text-muted">{t('pricing_rules.the_trigger')}</span>
+          <span className="text-base font-medium text-brand-text-main text-right ml-4">
+            {generateRuleTrigger(rule, t)}
+          </span>
+        </div>
+        <div className="flex justify-between items-center py-2 border-b border-brand-border">
+          <span className="text-base text-brand-text-muted">{t('pricing_rules.products_affected')}</span>
+          <span className="text-base font-medium text-brand-text-main">{rule.products_count} {t('pricing_rules.products')}</span>
         </div>
         <div className="flex justify-between items-center py-2 border-b border-brand-border">
           <span className="text-base text-brand-text-muted">{t('pricing_rules.auto_update', 'Auto Update')}</span>
           <span className="text-base font-medium text-brand-text-main">
             {rule.auto_update_price ? t('pricing_rules.yes', 'Yes') : t('pricing_rules.no_alerts', 'No (Alerts Only)')}
-          </span>
-        </div>
-        <div className="flex justify-between items-center py-2">
-          <span className="text-base text-brand-text-muted">{t('pricing_rules.last_execution', 'Last Execution')}</span>
-          <span className="text-base text-brand-text-main">
-            {rule.last_executed_at
-              ? formatTimeAgo(rule.last_executed_at)
-              : t('pricing_rules.never', 'Never')}
           </span>
         </div>
       </div>
@@ -249,7 +254,7 @@ export function PricingRules() {
       </div>
 
       {/* Responsive grid to ensure cards display optimally across all device widths */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-24">
         {rules.map((rule) => (
           <PricingRuleCard 
             key={rule.id} 
