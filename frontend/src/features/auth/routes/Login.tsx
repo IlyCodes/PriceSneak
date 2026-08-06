@@ -43,7 +43,11 @@ export const Login = () => {
       navigate('/dashboard');
       
     } catch (err: any) {
-      setError(err.message || t('auth.login_error'));
+      if (err.message && err.message.includes('Veuillez vérifier')) {
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+      } else {
+        setError(err.message || t('auth.login_error'));
+      }
     } finally {
       setLoading(false);
     }

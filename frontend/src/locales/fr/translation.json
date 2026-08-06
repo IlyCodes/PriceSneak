@@ -235,11 +235,7 @@
   },
   "pricing_rules": {
     "title": "Règles Tarifaires",
-    "desc": {
-      "equal": "Prix égal à {{target}}",
-      "higher": "Prix {{val}} plus élevé que {{target}}",
-      "lower": "Prix {{val}} plus bas que {{target}}"
-    },
+    "desc": "Gérez les règles et stratégies d'automatisation actives.",
     "no_competitors": "Aucun concurrent",
     "new_rule": "Nouvelle Règle",
     "active": "Activée",
@@ -309,6 +305,11 @@
       "competitor": "le concurrent ciblé",
       "cheapest": "le moins cher",
       "highest": "le plus cher"
+    },
+    "action_desc": {
+      "equal": "Prix égal à {{target}}",
+      "higher": "Prix {{val}} plus élevé que {{target}}",
+      "lower": "Prix {{val}} plus bas que {{target}}"
     }
   }
 }

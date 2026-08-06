@@ -14,7 +14,7 @@ export const IntegrationsSettings = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Shopify Card */}
+        
         <div className="relative group rounded-xl border border-slate-200 bg-slate-50 p-6 flex flex-col items-center justify-center text-center opacity-75 overflow-hidden transition-all duration-300">
           <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
             <ShoppingBag className="w-6 h-6" />
@@ -29,7 +29,7 @@ export const IntegrationsSettings = () => {
           </div>
         </div>
 
-        {/* WooCommerce Card */}
+        
         <div className="relative group rounded-xl border border-slate-200 bg-slate-50 p-6 flex flex-col items-center justify-center text-center opacity-75 overflow-hidden transition-all duration-300">
           <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
             <Store className="w-6 h-6" />

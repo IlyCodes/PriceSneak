@@ -3,6 +3,9 @@ from backend.models.product import Product
 from backend.models.alert import Alert
 from backend.models.pricing_rule import PricingRule
 from backend.models.competitor_product import CompetitorProduct
+from backend.models.user import User
+from backend.models.user_settings import UserSettings
+from backend.core.email import send_price_alert_email
 import decimal
 import json
 
@@ -94,6 +97,24 @@ def evaluate_product_rules(db: Session, competitor_product_id: str, new_competit
         )
         db.add(alert)
         db.commit()
+
+        # Check user settings and send email if enabled
+        try:
+            settings = db.query(UserSettings).filter(UserSettings.user_id == product.user_id).first()
+            if settings and settings.email_notification:
+                user = db.query(User).filter(User.id == product.user_id).first()
+                if user and user.email:
+                    send_price_alert_email(
+                        to_email=user.email,
+                        product_name=product.name,
+                        rule_name=rule.name,
+                        old_price=current_my_price,
+                        new_price=new_price,
+                        comp_price=base_price
+                    )
+        except Exception as e:
+            import logging
+            logging.error(f"Failed to send email alert: {e}")
 
         # Log historical price adjustment
         try:

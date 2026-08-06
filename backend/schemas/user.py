@@ -32,6 +32,7 @@ class UserResponse(UserBase):
     id: UUID
     is_admin: bool
     created_at: datetime
+    pending_email: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -46,9 +47,18 @@ class UserSettingsBase(BaseModel):
 
 class UserSettingsUpdate(BaseModel):
     currency: Optional[str] = None
+    language: Optional[str] = None
     dashboard_notification: Optional[bool] = None
     email_notification: Optional[bool] = None
-    language: Optional[str] = None
+
+
+class EmailVerify(BaseModel):
+    email: EmailStr
+    code: str
+
+
+class ResendVerification(BaseModel):
+    email: EmailStr
 
 
 class UserSettingsResponse(UserSettingsBase):

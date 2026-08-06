@@ -56,7 +56,7 @@ export const Settings = () => {
 
       <div className="flex flex-col md:flex-row gap-10 items-start">
         
-        {/* Menu latéral (Sticky sur Desktop, Scroll horizontal sur Mobile) */}
+        {/* Why: sticky positions the sidebar on desktop while allowing horizontal scroll on mobile */}
         <nav className="w-full md:w-64 shrink-0 md:sticky md:top-8 flex md:flex-col overflow-x-auto md:overflow-visible space-x-2 md:space-x-0 md:space-y-1 pb-2 md:pb-0 scrollbar-hide">
           {navItems.map((item) => (
             <button
@@ -73,7 +73,7 @@ export const Settings = () => {
           ))}
         </nav>
 
-        {/* Sections du formulaire empilées */}
+        
         <div className="flex-1 space-y-12 max-w-3xl w-full pb-64">
           <section id="personal-info" className="scroll-mt-8">
             <PersonalInfoForm />

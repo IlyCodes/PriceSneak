@@ -14,6 +14,8 @@ export const SecurityForm = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const hasChanges = currentPassword.length > 0 || newPassword.length > 0 || confirmPassword.length > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -107,20 +109,22 @@ export const SecurityForm = () => {
           </div>
         </div>
 
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="w-full sm:w-auto"
-        >
-          {isLoading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              {t('security.save_btn')}
-            </>
-          )}
-        </Button>
+        {hasChanges && (
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full sm:w-auto mt-4"
+          >
+            {isLoading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                {t('security.save_btn')}
+              </>
+            )}
+          </Button>
+        )}
       </form>
     </Card>
   );

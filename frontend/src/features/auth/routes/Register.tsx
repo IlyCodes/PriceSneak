@@ -30,7 +30,7 @@ export const Register = () => {
         data: { name, email, password }
       });
 
-      navigate('/login');
+      navigate(`/verify-email?email=${encodeURIComponent(email)}`);
       
     } catch (err: any) {
       setError(err.message || t('auth.register_error'));

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../auth/context/AuthContext';
 import { updateProfileInfo } from '../api/settingsApi';
-import { User, Mail, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Save, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
+import { apiFetch } from '../../../api/apiClient';
 
 export const PersonalInfoForm = () => {
   const { t } = useTranslation();
@@ -13,6 +14,8 @@ export const PersonalInfoForm = () => {
   const [name, setName] = useState(user?.name || '');
   const [email, setEmail] = useState(user?.email || '');
   const [isLoading, setIsLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -22,6 +25,8 @@ export const PersonalInfoForm = () => {
       setEmail(user.email);
     }
   }, [user]);
+
+  const hasChanges = name !== user?.name || email !== user?.email;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,13 +41,41 @@ export const PersonalInfoForm = () => {
       }
       
       const updatedUser = await updateProfileInfo({ name, email });
-      setSuccess(t('personal_info.success'));
       updateUser(updatedUser as any);
+      
+      if ((updatedUser as any).pending_email) {
+        setSuccess(`Un code de vérification a été envoyé à ${(updatedUser as any).pending_email}.`);
+      } else {
+        setSuccess(t('personal_info.success'));
+      }
 
     } catch (err: any) {
       setError(err.message || t('personal_info.error_save'));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleVerifyEmail = async () => {
+    if (!user?.pending_email) return;
+    setIsVerifying(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      await apiFetch('/api/auth/verify-email', {
+        data: { email: user.pending_email, code: verificationCode }
+      });
+      
+      const refreshedUser = await apiFetch('/api/auth/me');
+      updateUser(refreshedUser as any);
+      setEmail((refreshedUser as any).email);
+      setVerificationCode('');
+      setSuccess("L'adresse email a été mise à jour avec succès.");
+    } catch (err: any) {
+      setError(err.message || "Code de vérification invalide.");
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -104,21 +137,57 @@ export const PersonalInfoForm = () => {
           </div>
         </div>
 
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="w-full sm:w-auto"
-        >
-          {isLoading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              {t('personal_info.save_btn')}
-            </>
-          )}
-        </Button>
+        {hasChanges && (
+          <Button
+            type="submit"
+            disabled={isLoading || !!user?.pending_email}
+            className="w-full sm:w-auto mt-4"
+          >
+            {isLoading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                {t('personal_info.save_btn')}
+              </>
+            )}
+          </Button>
+        )}
       </form>
+
+      {user?.pending_email && (
+        <div className="mt-8 p-5 bg-blue-50 border border-blue-100 rounded-xl">
+          <div className="flex items-center mb-3">
+            <ShieldCheck className="w-5 h-5 text-blue-600 mr-2" />
+            <h3 className="text-sm font-semibold text-blue-900">Validation requise</h3>
+          </div>
+          <p className="text-sm text-blue-800 mb-4">
+            Pour des raisons de sécurité, nous avons envoyé un code de validation à <strong>{user.pending_email}</strong>. 
+            Veuillez entrer ce code pour finaliser le changement de votre adresse email.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="Code à 6 chiffres"
+              className="flex-1 p-2.5 border border-blue-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 font-mono tracking-widest text-center sm:text-left"
+            />
+            <Button
+              type="button"
+              onClick={handleVerifyEmail}
+              disabled={isVerifying || verificationCode.length !== 6}
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
+            >
+              {isVerifying ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
+              ) : (
+                "Valider l'email"
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
     </Card>
   );
 };

@@ -4,6 +4,7 @@ import { AuthProvider } from './features/auth/context/AuthContext';
 import { ProtectedRoute } from './features/auth/components/ProtectedRoute';
 import { Login } from './features/auth/routes/Login';
 import { Register } from './features/auth/routes/Register';
+import { VerifyEmail } from './features/auth/routes/VerifyEmail';
 import { Settings as SettingsPage } from './features/settings/routes/Settings';
 import { Dashboard } from './features/dashboard/routes/Dashboard';
 import { ProductsList } from './features/products/routes/ProductsList';
@@ -17,6 +18,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 

@@ -11,14 +11,14 @@ export const generateRuleDescription = (rule: PricingRule, currencySymbol: strin
   }
 
   if (rule.is_equal) {
-    return t('pricing_rules.desc.equal', { target });
+    return t('pricing_rules.action_desc.equal', { target });
   }
 
   const val = `${rule.value}${rule.value_type === 'percentage' ? '%' : currencySymbol}`;
   if (rule.comparison_operator === 'higher_than') {
-    return t('pricing_rules.desc.higher', { val, target });
+    return t('pricing_rules.action_desc.higher', { val, target });
   } else {
-    return t('pricing_rules.desc.lower', { val, target });
+    return t('pricing_rules.action_desc.lower', { val, target });
   }
 };
 

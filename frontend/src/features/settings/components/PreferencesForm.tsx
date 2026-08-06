@@ -11,6 +11,7 @@ export const PreferencesForm = () => {
   const { t, i18n } = useTranslation();
   const { updateCurrency } = useAuth();
   const [settings, setSettings] = useState<UserSettings | null>(null);
+  const [initialSettings, setInitialSettings] = useState<UserSettings | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState('');
@@ -21,6 +22,7 @@ export const PreferencesForm = () => {
       try {
         const data = await getSettings();
         setSettings(data);
+        setInitialSettings(data);
       } catch {
         setError(t('preferences.error_load'));
       } finally {
@@ -41,6 +43,7 @@ export const PreferencesForm = () => {
     try {
       const updated = await updateSettings(settings);
       setSettings(updated);
+      setInitialSettings(updated);
       i18n.changeLanguage(updated.language.toLowerCase());
       updateCurrency(updated.currency);
       setSuccess(t('preferences.success'));
@@ -56,6 +59,8 @@ export const PreferencesForm = () => {
   }
 
   if (!settings) return null;
+
+  const hasChanges = initialSettings && settings && JSON.stringify(initialSettings) !== JSON.stringify(settings);
 
   return (
     <Card>
@@ -83,7 +88,6 @@ export const PreferencesForm = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="flex flex-col gap-8">
           
-          {/* Région et Langue */}
           <div className="space-y-4">
             <h3 className="font-semibold text-slate-700 flex items-center">
               <Globe className="w-4 h-4 mr-2 text-slate-400"/> {t('preferences.region_language')}
@@ -115,7 +119,6 @@ export const PreferencesForm = () => {
             </div>
           </div>
 
-          {/* Notifications */}
           <div className="space-y-4">
             <h3 className="font-semibold text-slate-700 flex items-center">
               <Bell className="w-4 h-4 mr-2 text-slate-400"/> {t('preferences.notifications')}
@@ -146,20 +149,22 @@ export const PreferencesForm = () => {
 
         </div>
 
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="w-full sm:w-auto"
-        >
-          {isLoading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              {t('preferences.save_btn')}
-            </>
-          )}
-        </Button>
+        {hasChanges && (
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full sm:w-auto mt-4"
+          >
+            {isLoading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                {t('preferences.save_btn')}
+              </>
+            )}
+          </Button>
+        )}
       </form>
     </Card>
   );

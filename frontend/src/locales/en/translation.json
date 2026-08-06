@@ -236,11 +236,7 @@
   },
   "pricing_rules": {
     "title": "Pricing Rules",
-    "desc": {
-      "equal": "Price equal to {{target}}",
-      "higher": "Price {{val}} higher than {{target}}",
-      "lower": "Price {{val}} lower than {{target}}"
-    },
+    "desc": "Manage active automation rules and strategies.",
     "no_competitors": "No competitors",
     "new_rule": "New Rule",
     "active": "Active",
@@ -310,6 +306,11 @@
       "competitor": "the targeted competitor",
       "cheapest": "the cheapest",
       "highest": "the highest"
+    },
+    "action_desc": {
+      "equal": "Price equal to {{target}}",
+      "higher": "Price {{val}} higher than {{target}}",
+      "lower": "Price {{val}} lower than {{target}}"
     }
   }
 }
