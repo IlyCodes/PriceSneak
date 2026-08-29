@@ -24,6 +24,8 @@ from backend.schemas.user import (
     UserSettingsUpdate,
     EmailVerify,
     ResendVerification,
+    ForgotPassword,
+    ResetPassword,
 )
 
 router = APIRouter()
@@ -133,6 +135,60 @@ def resend_verification(
     send_verification_email(target_email, verification_code)
     
     return {"message": "Un nouveau code de vérification a été envoyé."}
+
+
+@router.post("/forgot-password")
+def forgot_password(
+    *,
+    db: Session = Depends(deps.get_db),
+    data: ForgotPassword,
+) -> Any:
+    """
+    Demande de réinitialisation de mot de passe.
+    """
+    user = db.query(User).filter(User.email == data.email).first()
+    if not user:
+        return {"message": "Si l'email existe, un lien a été envoyé."}
+    
+    from backend.core.security import create_password_reset_token
+    from backend.core.email import send_reset_password_email
+    
+    token = create_password_reset_token(user.email, user.password_hash)
+    send_reset_password_email(user.email, token)
+    
+    return {"message": "Si l'email existe, un lien a été envoyé."}
+
+
+@router.post("/reset-password")
+def reset_password(
+    *,
+    db: Session = Depends(deps.get_db),
+    data: ResetPassword,
+) -> Any:
+    """
+    Réinitialisation effective du mot de passe via token.
+    """
+    from backend.core.security import verify_password_reset_token
+    
+    payload = verify_password_reset_token(data.token)
+    if not payload:
+        raise HTTPException(status_code=400, detail="Lien invalide ou expiré.")
+        
+    email = payload.get("sub")
+    hash_fragment = payload.get("hash_fragment")
+    
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Lien invalide ou expiré.")
+        
+    if user.password_hash[:20] != hash_fragment:
+        raise HTTPException(status_code=400, detail="Ce lien a déjà été utilisé.")
+        
+    user.password_hash = get_password_hash(data.new_password)
+    db.commit()
+    
+    send_security_alert_email(user.email, "password_changed")
+    return {"message": "Mot de passe réinitialisé avec succès."}
 
 
 @router.post("/login", response_model=Token)

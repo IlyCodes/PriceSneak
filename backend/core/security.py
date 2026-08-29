@@ -29,3 +29,31 @@ def create_access_token(subject: str) -> str:
         to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
     )
     return encoded_jwt
+
+
+def create_password_reset_token(email: str, current_hash: str) -> str:
+    """Génère un token JWT pour la réinitialisation de mot de passe."""
+    expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode = {
+        "exp": expire,
+        "sub": email,
+        "purpose": "password_reset",
+        "hash_fragment": current_hash[:20]
+    }
+    encoded_jwt = jwt.encode(
+        to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM
+    )
+    return encoded_jwt
+
+
+def verify_password_reset_token(token: str) -> dict | None:
+    """Vérifie le token de réinitialisation et retourne le payload s'il est valide."""
+    try:
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        if payload.get("purpose") != "password_reset":
+            return None
+        return payload
+    except jwt.PyJWTError:
+        return None

@@ -60,6 +60,13 @@ class EmailVerify(BaseModel):
 class ResendVerification(BaseModel):
     email: EmailStr
 
+class ForgotPassword(BaseModel):
+    email: EmailStr
+
+class ResetPassword(BaseModel):
+    token: str
+    new_password: str
+
 
 class UserSettingsResponse(UserSettingsBase):
     id: UUID

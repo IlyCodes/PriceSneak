@@ -161,3 +161,40 @@ def send_security_alert_email(to_email: str, action: str):
     </html>
     """
     _send_email(to_email, subject, body)
+
+def send_reset_password_email(to_email: str, token: str):
+    subject = "Réinitialisation de votre mot de passe PriceSneak"
+    reset_url = f"http://localhost:5173/reset-password?token={token}"
+    
+    body = f"""
+    <!DOCTYPE html>
+    <html>
+      <body style="font-family: 'Inter', Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 40px 20px;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+          <tr>
+            <td style="padding: 40px 40px 20px 40px; text-align: center;">
+              <h1 style="margin: 0; color: #2563eb; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">PriceSneak</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 40px 30px 40px; text-align: center;">
+              <h2 style="margin: 0 0 15px 0; color: #1e293b; font-size: 20px; font-weight: 600;">Réinitialisation du mot de passe</h2>
+              <p style="margin: 0 0 25px 0; color: #475569; font-size: 15px; line-height: 1.6;">Vous avez demandé la réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe.</p>
+              
+              <div style="text-align: center; margin-bottom: 25px;">
+                <a href="{reset_url}" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; transition: background-color 0.2s;">Réinitialiser mon mot de passe</a>
+              </div>
+              
+              <p style="margin: 0; color: #64748b; font-size: 14px;">Ce lien est valable pendant 15 minutes. Si vous n'avez pas fait cette demande, vous pouvez ignorer cet email.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #f1f5f9;">
+              <p style="margin: 0; color: #94a3b8; font-size: 12px;">Ceci est un message automatique, merci de ne pas y répondre.<br/>© 2026 PriceSneak.</p>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+    """
+    _send_email(to_email, subject, body)

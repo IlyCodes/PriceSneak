@@ -29,7 +29,7 @@ export interface PaginatedProducts {
 }
 
 export interface ProductCreate {
-  sku: string;
+  sku?: string;
   name: string;
   brand?: string;
   category?: string;

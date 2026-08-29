@@ -343,13 +343,13 @@ export const ProductDetails = () => {
         : null;
 
       return {
-        'Boutique': comp.competitor.name,
-        'Lien': comp.product_url,
-        [`Son Prix (${currencySymbol})`]: comp.current_price || 'N/A',
-        [`Mon Prix (${currencySymbol})`]: product.my_current_price || 'N/A',
-        'En Stock': comp.is_in_stock ? 'Oui' : 'Non',
-        'Différence (%)': priceDiff !== null ? priceDiff.toFixed(2) : 'N/A',
-        'Dernière mise à jour': comp.last_scraped_at ? new Date(comp.last_scraped_at).toLocaleDateString() : 'N/A'
+        [t('products.export_store', 'Boutique')]: comp.competitor.name,
+        [t('products.export_link', 'Lien')]: comp.product_url,
+        [`${t('products.export_their_price', 'Son Prix')} (${currencySymbol})`]: comp.current_price || 'N/A',
+        [`${t('products.export_my_price', 'Mon Prix')} (${currencySymbol})`]: product.my_current_price || 'N/A',
+        [t('products.export_in_stock', 'En Stock')]: comp.is_in_stock ? t('products.export_yes', 'Oui') : t('products.export_no', 'Non'),
+        [t('products.export_difference', 'Différence (%)')]: priceDiff !== null ? priceDiff.toFixed(2) : 'N/A',
+        [t('products.export_last_update', 'Dernière mise à jour')]: comp.last_scraped_at ? new Date(comp.last_scraped_at).toLocaleDateString() : 'N/A'
       };
     });
 
@@ -361,9 +361,9 @@ export const ProductDetails = () => {
       const d = new Date(point.recorded_at);
       const dStr = d.toLocaleDateString();
       if (!exportDateMap[dStr]) {
-        exportDateMap[dStr] = { 'Date': dStr };
+        exportDateMap[dStr] = { [t('products.export_date', 'Date')]: dStr };
       }
-      exportDateMap[dStr][`Mon Prix (${currencySymbol})`] = point.price;
+      exportDateMap[dStr][`${t('products.export_my_price', 'Mon Prix')} (${currencySymbol})`] = point.price;
     });
 
     Object.entries(priceHistories).forEach(([compId, history]) => {
@@ -374,21 +374,21 @@ export const ProductDetails = () => {
         const d = new Date(point.recorded_at);
         const dStr = d.toLocaleDateString();
         if (!exportDateMap[dStr]) {
-          exportDateMap[dStr] = { 'Date': dStr };
+          exportDateMap[dStr] = { [t('products.export_date', 'Date')]: dStr };
         }
         exportDateMap[dStr][comp.competitor.name] = point.price;
-        if (exportDateMap[dStr][`Mon Prix (${currencySymbol})`] === undefined) {
-          exportDateMap[dStr][`Mon Prix (${currencySymbol})`] = product.my_current_price;
+        if (exportDateMap[dStr][`${t('products.export_my_price', 'Mon Prix')} (${currencySymbol})`] === undefined) {
+          exportDateMap[dStr][`${t('products.export_my_price', 'Mon Prix')} (${currencySymbol})`] = product.my_current_price;
         }
       });
     });
     
-    const historyData = Object.values(exportDateMap).sort((a, b) => new Date(a.Date).getTime() - new Date(b.Date).getTime());
+    const historyData = Object.values(exportDateMap).sort((a, b) => new Date(a[t('products.export_date', 'Date')]).getTime() - new Date(b[t('products.export_date', 'Date')]).getTime());
     const historySheet = utils.json_to_sheet(historyData);
 
     const wb = utils.book_new();
-    utils.book_append_sheet(wb, summarySheet, 'Résumé');
-    utils.book_append_sheet(wb, historySheet, 'Historique des prix');
+    utils.book_append_sheet(wb, summarySheet, t('products.export_sheet_summary', 'Résumé'));
+    utils.book_append_sheet(wb, historySheet, t('products.export_sheet_history', 'Historique des prix'));
 
     const safeName = product.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     writeFile(wb, `pricesneak_analyse_${safeName}.xlsx`);
@@ -469,7 +469,32 @@ export const ProductDetails = () => {
       });
     });
     
-    return Object.values(dateMap).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const sortedData = Object.values(dateMap).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Forward-fill the missing prices
+    const lastKnownPrices: Record<string, number> = {};
+    
+    sortedData.forEach(dayData => {
+      if (dayData['You'] !== undefined) {
+        lastKnownPrices['You'] = dayData['You'];
+      } else if (lastKnownPrices['You'] !== undefined) {
+        dayData['You'] = lastKnownPrices['You'];
+      }
+
+      selectedCompetitorIds.forEach(compId => {
+        const comp = competitors.find(c => c.id === compId);
+        if (comp) {
+          const compName = comp.competitor.name;
+          if (dayData[compName] !== undefined) {
+            lastKnownPrices[compName] = dayData[compName];
+          } else if (lastKnownPrices[compName] !== undefined) {
+            dayData[compName] = lastKnownPrices[compName];
+          }
+        }
+      });
+    });
+    
+    return sortedData;
   }, [priceHistories, ownHistory, competitors, product, selectedCompetitorIds, timeRange]);
 
   const chartColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];

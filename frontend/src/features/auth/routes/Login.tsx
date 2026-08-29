@@ -90,7 +90,14 @@ export const Login = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('auth.password_label')}</label>
+              <div className="flex justify-between items-center mb-2">
+                <label htmlFor="password" className="block text-sm font-semibold text-slate-700">
+                  {t('auth.password_label')}
+                </label>
+                <Link to="/forgot-password" className="text-sm font-semibold text-brand-primary hover:text-brand-secondary">
+                  {t('auth.forgot_password')}
+                </Link>
+              </div>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-gray-400" />

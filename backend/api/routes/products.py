@@ -94,18 +94,29 @@ def create_product(
     """
     Create new product.
     """
-    existing_product = (
-        db.query(Product)
-        .filter(Product.user_id == current_user.id, Product.sku == product_in.sku)
-        .first()
-    )
-    if existing_product:
-        raise HTTPException(
-            status_code=400,
-            detail="A product with this SKU already exists for your account.",
+    product_data = product_in.model_dump()
+    
+    if not product_data.get("sku"):
+        import uuid
+        while True:
+            generated_sku = f"PSK-PRD-{str(uuid.uuid4())[:7].upper()}"
+            existing = db.query(Product).filter(Product.user_id == current_user.id, Product.sku == generated_sku).first()
+            if not existing:
+                product_data["sku"] = generated_sku
+                break
+    else:
+        existing_product = (
+            db.query(Product)
+            .filter(Product.user_id == current_user.id, Product.sku == product_data["sku"])
+            .first()
         )
+        if existing_product:
+            raise HTTPException(
+                status_code=400,
+                detail="A product with this SKU already exists for your account.",
+            )
 
-    product = Product(**product_in.model_dump(), user_id=current_user.id)
+    product = Product(**product_data, user_id=current_user.id)
     db.add(product)
     db.commit()
     db.refresh(product)

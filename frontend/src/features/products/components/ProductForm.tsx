@@ -96,14 +96,16 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           </div>
         )}
 
-        <Input
-          label={t('products.sku')}
-          name="sku"
-          value={formData.sku}
-          onChange={handleChange}
-          placeholder={t('products.sku_placeholder')}
-          required
-        />
+        {isEditing && (
+          <Input
+            label={t('products.sku')}
+            name="sku"
+            value={formData.sku}
+            onChange={handleChange}
+            placeholder={t('products.sku_placeholder')}
+            disabled
+          />
+        )}
         
         <Input
           label={t('products.name')}
@@ -114,7 +116,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           required
         />
 
-        <div className="grid grid-cols-2 gap-4">
           <Input
             label={t('products.brand')}
             name="brand"
@@ -129,9 +130,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             onChange={handleChange}
             placeholder="Ex: Smartphones"
           />
-        </div>
 
-        <div className="grid grid-cols-2 gap-4">
           <Input
             label={t('products.cost_price')}
             name="cost_price"
@@ -153,7 +152,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             onChange={handleChange}
             className="font-medium text-brand-primary"
           />
-        </div>
 
         <div className="pt-2">
           <label className={`flex items-center gap-3 p-3 rounded-lg border border-slate-200 transition-colors ${!initialData?.rule_id ? 'opacity-60 cursor-not-allowed bg-slate-50' : 'cursor-pointer hover:bg-slate-50'}`}>

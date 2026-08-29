@@ -16,7 +16,7 @@ class ProductBase(BaseModel):
 
 
 class ProductCreate(ProductBase):
-    pass
+    sku: Optional[str] = Field(None, max_length=100)
 
 
 class ProductUpdate(BaseModel):
