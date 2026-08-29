@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Package, Calculator, Settings as SettingsIcon, LogOut, ChevronLeft, ChevronRight, User } from 'lucide-react';
+import { LayoutDashboard, Package, Calculator, Settings as SettingsIcon, LogOut, ChevronLeft, ChevronRight, User, Shield } from 'lucide-react';
 import { useAuth } from '../../features/auth/context/AuthContext';
 import { cn } from '../../lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +32,10 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
     { icon: Package, path: '/products', label: t('sidebar.products', 'My Products') }, 
     { icon: Calculator, path: '/rules', label: t('sidebar.rules', 'Pricing Rules') },
   ];
+
+  if (user?.is_admin) {
+    mainNavItems.push({ icon: Shield, path: '/admin', label: t('sidebar.admin', 'Admin Panel') });
+  }
 
   const bottomNavItems = [
     { icon: SettingsIcon, path: '/settings', label: t('sidebar.settings', 'Settings') },

@@ -7,6 +7,8 @@ import { Register } from './features/auth/routes/Register';
 import { VerifyEmail } from './features/auth/routes/VerifyEmail';
 import { ForgotPassword } from './features/auth/routes/ForgotPassword';
 import { ResetPassword } from './features/auth/routes/ResetPassword';
+import { AdminRoute } from './features/auth/components/AdminRoute';
+import { AdminPanel } from './features/admin/routes/AdminPanel';
 import { Settings as SettingsPage } from './features/settings/routes/Settings';
 import { Dashboard } from './features/dashboard/routes/Dashboard';
 import { ProductsList } from './features/products/routes/ProductsList';
@@ -32,6 +34,9 @@ function App() {
             <Route path="/products/:id" element={<ProductDetails />} />
             <Route path="/rules" element={<PricingRules />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<AdminPanel />} />
+            </Route>
           </Route>
         </Routes>
       </Router>
