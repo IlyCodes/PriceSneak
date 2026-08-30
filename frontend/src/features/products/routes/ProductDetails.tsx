@@ -6,7 +6,7 @@ import { getProduct, deleteProduct, updateProduct, getProductHistory, getProduct
 import { getRules, type PricingRule } from '../../pricing-rules/api/rulesApi';
 import { generateRuleDescription, generateRuleTrigger } from '../../pricing-rules/utils/ruleUtils';
 import { fetchCompetitors, addCompetitor, updateCompetitor, deleteCompetitor, fetchCompetitorHistory, type CompetitorProduct, type PriceHistoryPoint } from '../api/competitorsApi';
-import { Settings, ChevronDown, Download, Edit2, Trash2, ArrowLeft, Plus, FileSpreadsheet, Search, MoreVertical, Link as LinkIcon, ArrowUpRight, ArrowDownRight, Archive, Activity, DollarSign, UploadCloud, RefreshCw, BarChart2 } from 'lucide-react';
+import { Settings, ChevronDown, Download, Edit2, Trash2, ArrowLeft, Plus, FileSpreadsheet, Search, RefreshCw } from 'lucide-react';
 import { useToast } from '../../../hooks/useToast';
 import { read, utils, writeFile } from 'xlsx';
 import { useAuth } from '../../auth/context/AuthContext';
@@ -85,7 +85,6 @@ export const ProductDetails = () => {
   const [isAddCompetitorModalOpen, setIsAddCompetitorModalOpen] = useState(false);
   const [editingCompetitor, setEditingCompetitor] = useState<CompetitorProduct | undefined>();
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
-  const [isAddMenuEmptyOpen, setIsAddMenuEmptyOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [priceHistories, setPriceHistories] = useState<Record<string, PriceHistoryPoint[]>>({});
   const [selectedCompetitorIds, setSelectedCompetitorIds] = useState<Set<string>>(new Set());
@@ -122,6 +121,7 @@ export const ProductDetails = () => {
 
   useEffect(() => {
     fetchProduct();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
@@ -148,6 +148,7 @@ export const ProductDetails = () => {
     if (competitors.length > 0 && selectedCompetitorIds.size === 0) {
       setSelectedCompetitorIds(new Set(competitors.slice(0, 3).map(c => c.id)));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [competitors]);
 
   useEffect(() => {
@@ -247,20 +248,16 @@ export const ProductDetails = () => {
 
   const handleAddCompetitor = async (url: string) => {
     if (id) {
-      try {
-        if (editingCompetitor) {
-          await updateCompetitor(id, editingCompetitor.id, url);
-        } else {
-          await addCompetitor(id, url);
-        }
-        const competitorsData = await fetchCompetitors(id);
-        setCompetitors(competitorsData);
-        setEditingCompetitor(undefined);
-        // Why: Edit action bypasses modal's internal toast, requiring manual trigger here
-        if (editingCompetitor) toast.success(t('products.details.competitors.edit.success', 'Lien mis à jour avec succès.'));
-      } catch (e: any) {
-        throw e; // Why: Propagate error to modal for localized error handling
+      if (editingCompetitor) {
+        await updateCompetitor(id, editingCompetitor.id, url);
+      } else {
+        await addCompetitor(id, url);
       }
+      const competitorsData = await fetchCompetitors(id);
+      setCompetitors(competitorsData);
+      setEditingCompetitor(undefined);
+      // Why: Edit action bypasses modal's internal toast, requiring manual trigger here
+      if (editingCompetitor) toast.success(t('products.details.competitors.edit.success', 'Lien mis à jour avec succès.'));
     }
   };
 

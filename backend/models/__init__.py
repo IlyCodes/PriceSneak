@@ -7,6 +7,7 @@ from backend.models.product_analysis import ProductAnalysis
 from backend.models.competitor import Competitor
 from backend.models.competitor_product import CompetitorProduct
 from backend.models.alert import Alert
+from backend.models.faq import FAQ
 
 __all__ = [
     "Base",
@@ -18,4 +19,5 @@ __all__ = [
     "Competitor",
     "CompetitorProduct",
     "Alert",
+    "FAQ",
 ]

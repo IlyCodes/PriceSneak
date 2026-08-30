@@ -29,7 +29,27 @@
     "delete_confirm_desc": "Êtes-vous sûr de vouloir supprimer définitivement cet utilisateur ? Cela supprimera également tous ses produits, règles et données de suivi.",
     "cancel": "Annuler",
     "confirm_delete": "Oui, supprimer",
-    "user_deleted": "Utilisateur supprimé avec succès"
+    "user_deleted": "Utilisateur supprimé avec succès",
+    "tab_faqs": "Gérer les FAQs",
+    "add_faq": "Nouvelle FAQ",
+    "faq_question": "Question",
+    "faq_answer": "Réponse",
+    "faq_status": "Statut",
+    "faq_is_active": "Active",
+    "edit_faq": "Modifier la FAQ",
+    "save": "Enregistrer",
+    "faq_delete_confirm": "Êtes-vous sûr de vouloir supprimer cette FAQ ?",
+    "faq_deleted": "FAQ supprimée avec succès",
+    "faq_created": "FAQ créée",
+    "faq_updated": "FAQ mise à jour",
+    "error_faqs": "Erreur lors du chargement des FAQs"
+  },
+  "chatbot": {
+    "title": "Assistant PriceSneak",
+    "welcome": "Bonjour ! Je suis l'assistant PriceSneak. Comment puis-je vous aider aujourd'hui ?",
+    "typing": "En train de répondre...",
+    "placeholder": "Posez votre question...",
+    "error": "Désolé, je rencontre des difficultés techniques actuellement. Veuillez réessayer plus tard."
   },
   "profile": {
     "title": "Paramètres du compte",

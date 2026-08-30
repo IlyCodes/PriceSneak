@@ -1,7 +1,5 @@
 import { toast as hotToast, type ToastOptions } from 'react-hot-toast';
 
-type ToastType = 'success' | 'error' | 'loading' | 'custom';
-
 export const useToast = () => {
   const success = (message: string, options?: ToastOptions) => {
     return hotToast.success(message, options);

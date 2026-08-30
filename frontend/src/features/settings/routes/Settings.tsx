@@ -5,14 +5,19 @@ import { PreferencesForm } from '../components/PreferencesForm';
 import { IntegrationsSettings } from '../components/IntegrationsSettings';
 import { useTranslation } from 'react-i18next';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
+import { useAuth } from '../../auth/context/AuthContext';
 
 export const Settings = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [activeSection, setActiveSection] = useState('personal-info');
 
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['personal-info', 'preferences', 'integrations', 'security'];
+      const sections = ['personal-info', 'security'];
+      if (!user?.is_admin) {
+        sections.push('preferences', 'integrations');
+      }
       for (const section of sections) {
         const element = document.getElementById(section);
         if (element) {
@@ -42,8 +47,8 @@ export const Settings = () => {
 
   const navItems = [
     { id: 'personal-info', label: t('profile.menu.personal_info') },
-    { id: 'preferences', label: t('profile.menu.preferences') },
-    { id: 'integrations', label: t('profile.menu.integrations') },
+    ...(!user?.is_admin ? [{ id: 'preferences', label: t('profile.menu.preferences') }] : []),
+    ...(!user?.is_admin ? [{ id: 'integrations', label: t('profile.menu.integrations') }] : []),
     { id: 'security', label: t('profile.menu.security') },
   ];
 
@@ -79,13 +84,17 @@ export const Settings = () => {
             <PersonalInfoForm />
           </section>
           
-          <section id="preferences" className="scroll-mt-8">
-            <PreferencesForm />
-          </section>
-          
-          <section id="integrations" className="scroll-mt-8">
-            <IntegrationsSettings />
-          </section>
+          {!user?.is_admin && (
+            <>
+              <section id="preferences" className="scroll-mt-8">
+                <PreferencesForm />
+              </section>
+              
+              <section id="integrations" className="scroll-mt-8">
+                <IntegrationsSettings />
+              </section>
+            </>
+          )}
 
           <section id="security" className="scroll-mt-8">
             <SecurityForm />

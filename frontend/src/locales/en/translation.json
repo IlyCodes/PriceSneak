@@ -29,7 +29,27 @@
     "delete_confirm_desc": "Are you sure you want to permanently delete this user? This will also delete all of their products, rules, and tracking data.",
     "cancel": "Cancel",
     "confirm_delete": "Yes, Delete",
-    "user_deleted": "User successfully deleted"
+    "user_deleted": "User successfully deleted",
+    "tab_faqs": "Manage FAQs",
+    "add_faq": "New FAQ",
+    "faq_question": "Question",
+    "faq_answer": "Answer",
+    "faq_status": "Status",
+    "faq_is_active": "Active",
+    "edit_faq": "Edit FAQ",
+    "save": "Save",
+    "faq_delete_confirm": "Are you sure you want to delete this FAQ?",
+    "faq_deleted": "FAQ successfully deleted",
+    "faq_created": "FAQ created",
+    "faq_updated": "FAQ updated",
+    "error_faqs": "Error loading FAQs"
+  },
+  "chatbot": {
+    "title": "PriceSneak Assistant",
+    "welcome": "Hello! I am the PriceSneak assistant. How can I help you today?",
+    "typing": "Replying...",
+    "placeholder": "Ask your question...",
+    "error": "Sorry, I'm having technical difficulties right now. Please try again later."
   },
   "profile": {
     "title": "Account Settings",

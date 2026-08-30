@@ -2,10 +2,9 @@ import { useEffect, useState } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { Card } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { Link } from 'react-router-dom';
-import type { DashboardStats, Alert } from '../api/dashboardApi';
+import type { DashboardStats } from '../api/dashboardApi';
 import { getDashboardStats, markAlertAsRead, markAllAlertsAsRead } from '../api/dashboardApi';
 import { AlertsModal } from '../components/AlertsModal';
 import { useAuth } from '../../auth/context/AuthContext';
@@ -263,7 +262,7 @@ export const Dashboard = () => {
                     </Pie>
                     <RechartsTooltip 
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}
-                      formatter={(value: number) => [`${value} ${t('dashboard.products', 'products')}`, undefined]}
+                      formatter={(value: any) => [`${value} ${t('dashboard.products', 'products')}`, undefined]}
                     />
                   </PieChart>
                 </ResponsiveContainer>

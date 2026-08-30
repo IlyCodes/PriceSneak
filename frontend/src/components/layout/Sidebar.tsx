@@ -27,15 +27,13 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
   const { logout, user } = useAuth();
   const { t } = useTranslation();
 
-  const mainNavItems = [
+  const mainNavItems = user?.is_admin ? [
+    { icon: Shield, path: '/admin', label: t('sidebar.admin', 'Admin Panel') }
+  ] : [
     { icon: LayoutDashboard, path: '/dashboard', label: t('sidebar.dashboard', 'Dashboard') },
     { icon: Package, path: '/products', label: t('sidebar.products', 'My Products') }, 
     { icon: Calculator, path: '/rules', label: t('sidebar.rules', 'Pricing Rules') },
   ];
-
-  if (user?.is_admin) {
-    mainNavItems.push({ icon: Shield, path: '/admin', label: t('sidebar.admin', 'Admin Panel') });
-  }
 
   const bottomNavItems = [
     { icon: SettingsIcon, path: '/settings', label: t('sidebar.settings', 'Settings') },
@@ -65,10 +63,13 @@ export const Sidebar = ({ isMobileMenuOpen, setIsMobileMenuOpen }: SidebarProps)
       </button>
       <div className="h-24 flex items-center px-5 shrink-0">
         <div className="flex items-center gap-3 text-brand-primary font-bold text-xl w-full">
-          <div className="w-8 h-8 bg-brand-primary text-white rounded flex items-center justify-center shrink-0">
-            P
-          </div>
-          {isExpanded && <span className="truncate">PriceSneak</span>}
+          {isExpanded ? (
+            <span className="truncate">PriceSneak</span>
+          ) : (
+            <div className="w-8 h-8 bg-brand-primary text-white rounded flex items-center justify-center shrink-0">
+              P
+            </div>
+          )}
         </div>
       </div>
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto">

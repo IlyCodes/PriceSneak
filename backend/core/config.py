@@ -27,6 +27,7 @@ class Settings(BaseSettings):
 
     REDIS_URL: str = "redis://localhost:6379/0"
     PROXY_URL: str | None = None
+    GEMINI_API_KEY: str | None = None
 
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587

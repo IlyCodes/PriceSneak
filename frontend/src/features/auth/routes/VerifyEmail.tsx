@@ -10,7 +10,7 @@ export const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
   const emailParam = searchParams.get('email');
   
-  const [email, setEmail] = useState(emailParam || '');
+  const [email] = useState(emailParam || '');
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');

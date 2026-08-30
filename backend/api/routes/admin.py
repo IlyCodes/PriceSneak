@@ -75,3 +75,64 @@ async def delete_user(
     db.commit()
     
     return {"message": "Utilisateur supprimé avec succès"}
+
+from backend.models.faq import FAQ
+from backend.schemas.faq import FAQResponse, FAQCreate, FAQUpdate
+from typing import List
+
+@router.get("/faqs", response_model=List[FAQResponse])
+def get_faqs(
+    db: Session = Depends(deps.get_db),
+    current_admin: User = Depends(deps.get_current_admin_user),
+) -> Any:
+    faqs = db.query(FAQ).order_by(FAQ.created_at.desc()).all()
+    return faqs
+
+@router.post("/faqs", response_model=FAQResponse)
+def create_faq(
+    *,
+    db: Session = Depends(deps.get_db),
+    faq_in: FAQCreate,
+    current_admin: User = Depends(deps.get_current_admin_user),
+) -> Any:
+    faq = FAQ(**faq_in.model_dump())
+    db.add(faq)
+    db.commit()
+    db.refresh(faq)
+    return faq
+
+@router.put("/faqs/{faq_id}", response_model=FAQResponse)
+def update_faq(
+    *,
+    db: Session = Depends(deps.get_db),
+    faq_id: str,
+    faq_in: FAQUpdate,
+    current_admin: User = Depends(deps.get_current_admin_user),
+) -> Any:
+    faq = db.query(FAQ).filter(FAQ.id == faq_id).first()
+    if not faq:
+        raise HTTPException(status_code=404, detail="FAQ introuvable")
+        
+    update_data = faq_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(faq, field, value)
+        
+    db.add(faq)
+    db.commit()
+    db.refresh(faq)
+    return faq
+
+@router.delete("/faqs/{faq_id}")
+def delete_faq(
+    *,
+    db: Session = Depends(deps.get_db),
+    faq_id: str,
+    current_admin: User = Depends(deps.get_current_admin_user),
+) -> Any:
+    faq = db.query(FAQ).filter(FAQ.id == faq_id).first()
+    if not faq:
+        raise HTTPException(status_code=404, detail="FAQ introuvable")
+        
+    db.delete(faq)
+    db.commit()
+    return {"message": "FAQ supprimée avec succès"}

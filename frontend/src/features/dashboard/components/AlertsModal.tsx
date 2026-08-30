@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Trash2, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { SlideOver } from '../../../components/ui/SlideOver';
 import { Button } from '../../../components/ui/Button';
 import type { Alert } from '../api/dashboardApi';
@@ -151,11 +151,10 @@ export const AlertsModal = ({ isOpen, onClose }: AlertsModalProps) => {
 
   return (
     <>
-      <SlideOver
-        isOpen={isOpen}
+      <SlideOver 
+        isOpen={isOpen} 
         onClose={onClose}
-        title={t('dashboard.all_alerts', 'All Alerts')}
-        size="md"
+        title={t('dashboard.alerts_modal.title', 'Toutes les alertes')}
       >
         <div className="h-full flex flex-col">
           <div className="flex items-center justify-between p-4 border-b">
